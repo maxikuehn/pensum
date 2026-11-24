@@ -24,7 +24,7 @@ struct ShiftApp: App {
         MenuBarExtra {
             MenuBarView(tracker: tracker)
         } label: {
-            Image(systemName: tracker.isRunning ? "clock.fill" : "clock")
+            Image(nsImage: MenuBarIcon.image(tracker.isRunning ? .running : tracker.awaySince != nil ? .paused : .idle))
         }
         .menuBarExtraStyle(.window)
         .modelContainer(container)

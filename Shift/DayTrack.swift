@@ -1,11 +1,11 @@
 import ShiftCore
 import SwiftUI
 
-/// Sichtbares Zeitfenster der Übersicht: 13 Stunden, standardmäßig 7–20 Uhr.
+/// Sichtbares Zeitfenster der Übersicht, wie in den Einstellungen festgelegt (standardmäßig 7–20 Uhr).
 enum TimeWindow {
-    static let length = 13 * 60
-    static let home = 7 * 60
-    static let maxOffset = Double(DayEditing.dayEnd - length)
+    static var home: Int { Preferences.dayStartHour * 60 }
+    static var length: Int { (Preferences.dayEndHour - Preferences.dayStartHour) * 60 }
+    static var maxOffset: Double { Double(DayEditing.dayEnd - length) }
 }
 
 /// Die Zeitleiste eines Tages. Zeigt die Blöcke und nimmt alle Bearbeitungen mit der Maus entgegen.
@@ -13,6 +13,8 @@ enum TimeWindow {
 struct DayTrack: View {
     let spans: [DaySpan]
     let offset: Double
+    /// Meldet die Blöcke während des Ziehens (und `nil` danach), damit die Summen mitlaufen.
+    var onDraft: ([DaySpan]?) -> Void = { _ in }
     let commit: (_ spans: [DaySpan], _ undoMessage: String?) -> Void
 
     @State private var draft: [DaySpan]?
@@ -50,7 +52,7 @@ struct DayTrack: View {
             .frame(width: width, height: Self.height, alignment: .topLeading)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .coordinateSpace(.named("track"))
-            .overlay(alignment: .topLeading) { bubble(in: shown, x: x) }
+            .overlay { bubble(in: shown, x: x) }
         }
         .frame(height: Self.height)
     }
@@ -170,6 +172,7 @@ struct DayTrack: View {
                     let target = DayEditing.snap(minute(value.location.x))
                     let moved = DayEditing.moving(spans, index: index, edge: edge, to: target)
                     draft = moved
+                    onDraft(moved)
                     dragging = (index, edge, edge == .start ? moved[index].start : moved[index].end)
                 }
                 .onEnded { _ in
@@ -178,6 +181,7 @@ struct DayTrack: View {
                     let result = DayEditing.committing(moved, index: index, edge: edge)
                     draft = nil
                     dragging = nil
+                    onDraft(nil)
                     switch outcome {
                     case .keep: commit(result, nil)
                     case .delete: commit(result, "Arbeitszeit gelöscht")
@@ -224,8 +228,7 @@ struct DayTrack: View {
                 .padding(.vertical, 4)
                 .background(RoundedRectangle(cornerRadius: 6).fill(outcome == .delete ? Color.shiftDanger : .primary))
                 .fixedSize()
-                .alignmentGuide(.leading) { $0.width / 2 - position }
-                .alignmentGuide(.top) { $0.height + 6 }
+                .position(x: position, y: -12)
                 .allowsHitTesting(false)
         }
     }

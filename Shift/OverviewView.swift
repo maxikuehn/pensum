@@ -15,6 +15,10 @@ struct OverviewView: View {
     @State private var rowsFrame: CGRect = .zero
     @State private var axisFrame: CGRect = .zero
     @State private var trackWidth: CGFloat = 0
+    /// Blöcke des Tages, an dem gerade ein Griff gezogen wird, damit die Summen sofort mitlaufen.
+    @State private var liveEdit: (day: Date, spans: [DaySpan])?
+    @AppStorage(Preferences.dayStartKey) private var dayStart = 7
+    @AppStorage(Preferences.dayEndKey) private var dayEnd = 20
 
     private let calendar = Calendar.current
 
@@ -40,11 +44,18 @@ struct OverviewView: View {
         .sheet(isPresented: $showsProjects) {
             ProjectManager(model: model)
         }
+        .onChange(of: dayStart) { offset = Double(TimeWindow.home) }
+        .onChange(of: dayEnd) { offset = Double(TimeWindow.home) }
+    }
+
+    private func spans(on day: Date, now: Date) -> [DaySpan] {
+        if let liveEdit, liveEdit.day == day { return liveEdit.spans }
+        return model.spans(on: day, now: now)
     }
 
     private func content(now: Date) -> some View {
         let days = period.days(calendar: calendar)
-        let totals = Dictionary(uniqueKeysWithValues: days.map { ($0, model.spans(on: $0, now: now).reduce(0) { $0 + $1.minutes }) })
+        let totals = Dictionary(uniqueKeysWithValues: days.map { ($0, spans(on: $0, now: now).reduce(0) { $0 + $1.minutes }) })
 
         return VStack(alignment: .leading, spacing: 0) {
             header(days: days, totals: totals, now: now)
@@ -55,10 +66,16 @@ struct OverviewView: View {
             VStack(spacing: 0) {
                 axis
                 ForEach(days, id: \.self) { day in
-                    DayRow(model: model, day: day, now: now, offset: offset, onEdit: edit, onManageProjects: { showsProjects = true })
-                    if calendar.component(.weekday, from: day) == 1 {
-                        weekRow(sunday: day, now: now)
-                    }
+                    DayRow(
+                        model: model,
+                        day: day,
+                        now: now,
+                        offset: offset,
+                        liveSpans: liveEdit?.day == day ? liveEdit?.spans : nil,
+                        onDraft: { draft in liveEdit = draft.map { (day, $0) } },
+                        onEdit: edit,
+                        onManageProjects: { showsProjects = true }
+                    )
                 }
             }
             .padding(.horizontal, 24)
@@ -71,8 +88,9 @@ struct OverviewView: View {
     // MARK: Kopf
 
     private func header(days: [Date], totals: [Date: Int], now: Date) -> some View {
-        let today = calendar.startOfDay(for: now)
-        let done = days.filter { $0 < today && totals[$0, default: 0] > 0 }
+        // Der heutige Tag zählt erst mit, wenn die Zeit nicht mehr läuft
+        let running = model.tracker.isRunning
+        let done = days.filter { totals[$0, default: 0] > 0 && !(running && calendar.isDate($0, inSameDayAs: now)) }
         let average = done.isEmpty ? nil : done.reduce(0) { $0 + totals[$1, default: 0] } / done.count
         let sum = totals.values.reduce(0, +)
         var perProject: [(project: Project, minutes: Int)] = []
@@ -89,22 +107,13 @@ struct OverviewView: View {
 
         return HStack(alignment: .center, spacing: 22) {
             VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(Formats.month.string(from: days[0]))
-                        .font(.system(size: 22, weight: .bold))
-                    Text("\(range.lowerBound).–\(range.upperBound).")
-                        .font(.system(size: 22))
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                    HStack(spacing: 5) {
-                        ForEach(1...2, id: \.self) { half in
-                            Circle()
-                                .fill(half == period.half ? Color.primary : Color.track)
-                                .frame(width: 6, height: 6)
-                        }
+                HStack(alignment: .center, spacing: 12) {
+                    // So breit wie der längste mögliche Titel, damit die Punkte immer an derselben Stelle stehen
+                    ZStack(alignment: .leading) {
+                        title(month: "September 2026", range: "16.–31.").hidden()
+                        title(month: Formats.month.string(from: days[0]), range: "\(range.lowerBound).–\(range.upperBound).")
                     }
-                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 6 }
-                    .accessibilityHidden(true)
+                    PageDots(half: period.half)
                 }
                 Text(average.map { "Ø \(HoursFormat.decimal($0)) h pro Tag" } ?? "Noch keine Zeit erfasst")
                     .foregroundStyle(.secondary)
@@ -140,6 +149,13 @@ struct OverviewView: View {
                     .font(.system(size: 12))
                 }
             }
+        }
+    }
+
+    private func title(month: String, range: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(month).font(.system(size: 22, weight: .bold))
+            Text(range).font(.system(size: 22)).foregroundStyle(.secondary).monospacedDigit()
         }
     }
 
@@ -287,25 +303,6 @@ struct OverviewView: View {
     }
     #endif
 
-    // MARK: Wochen
-
-    private func weekRow(sunday: Date, now: Date) -> some View {
-        let week = (0..<7).map { calendar.date(byAdding: .day, value: -$0, to: sunday)! }
-        let minutes = week.reduce(0) { $0 + model.spans(on: $1, now: now).reduce(0) { $0 + $1.minutes } }
-        return HStack(spacing: Self.spacing) {
-            Color.clear.frame(width: Self.dateWidth)
-            Text("KW \(Calendar(identifier: .iso8601).component(.weekOfYear, from: sunday))")
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            Text(minutes > 0 ? "Woche \(HoursFormat.decimal(minutes)) h" : "")
-                .frame(width: Self.totalWidth, alignment: .trailing)
-        }
-        .font(.system(size: 11))
-        .foregroundStyle(.secondary)
-        .monospacedDigit()
-        .frame(height: 26)
-        .overlay(alignment: .bottom) { Divider() }
-    }
-
     // MARK: Rückgängig
 
     private func edit(day: Date, before: [DaySpan], after: [DaySpan], message: String?) {
@@ -360,6 +357,9 @@ private struct DayRow: View {
     let day: Date
     let now: Date
     let offset: Double
+    /// Während des Ziehens: die Blöcke mit dem gezogenen Griff, für die Summe
+    let liveSpans: [DaySpan]?
+    let onDraft: ([DaySpan]?) -> Void
     let onEdit: (_ day: Date, _ before: [DaySpan], _ after: [DaySpan], _ message: String?) -> Void
     let onManageProjects: () -> Void
 
@@ -396,7 +396,7 @@ private struct DayRow: View {
             if isVacation {
                 VacationTrack()
             } else {
-                DayTrack(spans: spans, offset: offset) { after, message in
+                DayTrack(spans: spans, offset: offset, onDraft: onDraft) { after, message in
                     onEdit(day, spans, after, message)
                 }
                 .opacity(isWeekend && spans.isEmpty ? 0.55 : 1)
@@ -404,8 +404,8 @@ private struct DayRow: View {
 
             ZStack(alignment: .trailing) {
                 Color.clear
-                if !spans.isEmpty {
-                    DayTotal(model: model, day: day, spans: spans, onManageProjects: onManageProjects)
+                if !(liveSpans ?? spans).isEmpty {
+                    DayTotal(model: model, day: day, spans: liveSpans ?? spans, onManageProjects: onManageProjects)
                 } else if !isWeekend {
                     VacationButton(isOn: isVacation) { model.toggleVacation(day) }
                 }
@@ -453,6 +453,26 @@ private struct VacationButton: View {
         .buttonStyle(.plain)
         .onHover { hovered = $0 }
         .accessibilityLabel(isOn ? "Urlaub entfernen" : "Urlaub eintragen")
+    }
+}
+
+/// Zwei Punkte für die Monatshälfte; der dunkle gleitet beim Blättern hinüber.
+private struct PageDots: View {
+    let half: Int
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            HStack(spacing: 5) {
+                Circle().fill(Color.track).frame(width: 6, height: 6)
+                Circle().fill(Color.track).frame(width: 6, height: 6)
+            }
+            Capsule()
+                .fill(Color.primary)
+                .frame(width: 6, height: 6)
+                .offset(x: half == 1 ? 0 : 11)
+                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: half)
+        }
+        .accessibilityHidden(true)
     }
 }
 

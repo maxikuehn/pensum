@@ -7,6 +7,12 @@ enum Preferences {
     static let idleMinutesKey = "idleMinutes"
     static let checkInEnabledKey = "checkInEnabled"
     static let workdaysKey = "workdays"
+    static let dayStartKey = "dayStartHour"
+    static let dayEndKey = "dayEndHour"
+
+    /// Sichtbarer Zeitraum der Zeitleisten, standardmäßig 7–20 Uhr.
+    static var dayStartHour: Int { UserDefaults.standard.object(forKey: dayStartKey) as? Int ?? 7 }
+    static var dayEndHour: Int { UserDefaults.standard.object(forKey: dayEndKey) as? Int ?? 20 }
 
     static var idleMinutes: Int {
         let value = UserDefaults.standard.integer(forKey: idleMinutesKey)
@@ -27,6 +33,8 @@ struct SettingsView: View {
     @AppStorage(Preferences.idleMinutesKey) private var idleMinutes = 15
     @AppStorage(Preferences.checkInEnabledKey) private var checkInEnabled = true
     @AppStorage(Preferences.workdaysKey) private var workdays = "23456"
+    @AppStorage(Preferences.dayStartKey) private var dayStart = 7
+    @AppStorage(Preferences.dayEndKey) private var dayEnd = 20
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     /// Montag zuerst, wie im Kalender
@@ -40,6 +48,24 @@ struct SettingsView: View {
             Picker("Pause nach", selection: $idleMinutes) {
                 ForEach([5, 10, 15, 20, 30], id: \.self) { Text("\($0) Minuten ohne Eingabe").tag($0) }
             }
+
+            LabeledContent("Sichtbarer Zeitraum") {
+                HStack(spacing: 6) {
+                    Picker("Von", selection: $dayStart) {
+                        ForEach(0..<23, id: \.self) { Text("\($0):00").tag($0) }
+                    }
+                    Text("bis")
+                    Picker("Bis", selection: $dayEnd) {
+                        ForEach(2...24, id: \.self) { Text("\($0):00").tag($0) }
+                    }
+                }
+                .labelsHidden()
+                .fixedSize()
+                .monospacedDigit()
+            }
+            // Mindestens zwei Stunden, damit die Zeitleiste lesbar bleibt
+            .onChange(of: dayStart) { _, start in if dayEnd < start + 2 { dayEnd = min(24, start + 2) } }
+            .onChange(of: dayEnd) { _, end in if dayStart > end - 2 { dayStart = max(0, end - 2) } }
 
             Toggle("Morgens fragen, ob die Arbeitszeit starten soll", isOn: $checkInEnabled)
 

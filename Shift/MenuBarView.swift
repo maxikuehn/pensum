@@ -8,16 +8,11 @@ struct MenuBarView: View {
     @Environment(\.openSettings) private var openSettings
     private let calculator = DayCalculator()
 
-    private func menuRow(_ title: String, shortcut: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(title)
-                Spacer()
-                Text(shortcut).foregroundStyle(.tertiary)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+    /// Schließt das Menübar-Fenster, bevor ein anderes Fenster aufgeht.
+    private func closeAndOpen(_ open: () -> Void) {
+        NSApplication.shared.keyWindow?.close()
+        open()
+        NSApplication.shared.activate()
     }
 
     var body: some View {
@@ -48,22 +43,21 @@ struct MenuBarView: View {
 
                 Divider()
 
-                VStack(alignment: .leading, spacing: 8) {
-                    menuRow("Übersicht", shortcut: "⌘O") {
-                        openWindow(id: "overview")
-                        NSApplication.shared.activate()
+                VStack(alignment: .leading, spacing: 2) {
+                    MenuRow(title: "Übersicht", shortcut: "⌘O") {
+                        closeAndOpen { openWindow(id: "overview") }
                     }
                     .keyboardShortcut("o")
-                    menuRow("Einstellungen", shortcut: "⌘,") {
-                        openSettings()
-                        NSApplication.shared.activate()
+                    MenuRow(title: "Einstellungen", shortcut: "⌘,") {
+                        closeAndOpen { openSettings() }
                     }
                     .keyboardShortcut(",")
-                    menuRow("Shift beenden", shortcut: "⌘Q") {
+                    MenuRow(title: "Shift beenden", shortcut: "⌘Q") {
                         NSApplication.shared.terminate(nil)
                     }
                     .keyboardShortcut("q")
                 }
+                .padding(.horizontal, -8)
             }
             .padding(16)
             .frame(width: 280)
@@ -71,13 +65,37 @@ struct MenuBarView: View {
     }
 }
 
-/// Der heutige Tag als schmale Leiste: standardmäßig 7–20 Uhr, breiter, wenn außerhalb gearbeitet wurde.
+/// Eintrag wie in einem Menü, beim Darüberfahren hervorgehoben.
+private struct MenuRow: View {
+    let title: String
+    let shortcut: String
+    let action: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(shortcut).foregroundStyle(hovered ? .secondary : .tertiary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovered ? Color.hoverFill : .clear))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+    }
+}
+
+/// Der heutige Tag als schmale Leiste: im eingestellten Zeitraum, breiter, wenn außerhalb gearbeitet wurde.
 private struct DayStrip: View {
     let spans: [DaySpan]
 
     var body: some View {
-        let lower = min(7 * 60, (spans.first?.start ?? 7 * 60) / 60 * 60)
-        let upper = max(20 * 60, ((spans.map(\.end).max() ?? 0) + 59) / 60 * 60)
+        let lower = min(TimeWindow.home, (spans.first?.start ?? TimeWindow.home) / 60 * 60)
+        let upper = max(TimeWindow.home + TimeWindow.length, ((spans.map(\.end).max() ?? 0) + 59) / 60 * 60)
 
         GeometryReader { geometry in
             let scale = geometry.size.width / CGFloat(upper - lower)
