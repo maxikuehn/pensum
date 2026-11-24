@@ -1,0 +1,72 @@
+# Baut Pensum bei jedem Push auf main und testet die Rechenlogik.
+# Ein Release entsteht nur, wenn es für die Version in Xcode (MARKETING_VERSION) noch keinen Tag gibt:
+# Version erhöhen, pushen, fertig. Ohne neue Version bleibt der Build als Artefakt am Lauf hängen.
+name: Build und Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Version bestimmen
+        id: version
+        run: |
+          version=$(grep -m1 'MARKETING_VERSION = ' Pensum.xcodeproj/project.pbxproj | sed -E 's/.*= ([^;]+);.*/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "Version $version ist schon veröffentlicht, es wird nur gebaut."
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "Neue Version $version, es wird ein Release angelegt."
+          fi
+          xcodebuild -version
+
+      - name: Rechenlogik testen
+        working-directory: PensumCore
+        run: swift test
+
+      - name: App bauen
+        run: |
+          xcodebuild -project Pensum.xcodeproj -scheme Pensum -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath build \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build
+
+      - name: Verpacken
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent build/Build/Products/Release/Pensum.app "Pensum-${{ steps.version.outputs.version }}.zip"
+
+      - name: Release anlegen
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" "Pensum-${{ steps.version.outputs.version }}.zip" \
+            --title "Pensum ${{ steps.version.outputs.version }}" \
+            --target "$GITHUB_SHA" \
+            --generate-notes
+
+      - name: Build als Artefakt ablegen
+        if: steps.version.outputs.release != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pensum-${{ steps.version.outputs.version }}-build-${{ github.run_number }}
+          path: Pensum-${{ steps.version.outputs.version }}.zip
+          retention-days: 14

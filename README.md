@@ -18,6 +18,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/maxikuehn/pensum/releases/latest"><img src="https://img.shields.io/github/v/release/maxikuehn/pensum?label=Version&color=F6C431" alt="Neueste Version"></a>
   <img src="https://img.shields.io/badge/macOS-26%2B-black" alt="macOS 26 und neuer">
   <img src="https://img.shields.io/badge/Swift-6-F05138" alt="Swift 6">
   <img src="https://img.shields.io/badge/SwiftUI-SwiftData-0A84FF" alt="SwiftUI und SwiftData">
@@ -49,21 +50,31 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
 
 ## Installieren
 
-Pensum gibt es noch nicht als fertigen Download. Du baust es mit Xcode 26 selbst:
+1. Die neueste `Pensum-….zip` unter [Releases](https://github.com/maxikuehn/pensum/releases/latest) laden und entpacken.
+2. `Pensum.app` in den Programme-Ordner ziehen und öffnen.
+3. In den Einstellungen kannst du *Bei der Anmeldung starten* einschalten.
+
+Pensum ist nicht bei Apple notarisiert. Beim ersten Öffnen meldet macOS deshalb, dass es die App nicht überprüfen kann. Unter **Systemeinstellungen → Datenschutz & Sicherheit** steht dann weiter unten *Dennoch öffnen*. Alternativ entfernt dieser Befehl die Sperre:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Pensum.app
+```
+
+### Selbst bauen
+
+Mit Xcode 26 oder neuer:
 
 ```bash
 git clone https://github.com/maxikuehn/pensum.git
 ```
 
 ```bash
-cd pensum && xcodebuild -project Pensum.xcodeproj -scheme Pensum -configuration Release -derivedDataPath build build
+cd pensum && xcodebuild -project Pensum.xcodeproj -scheme Pensum -configuration Release -destination 'generic/platform=macOS' -derivedDataPath build build
 ```
 
 ```bash
 cp -R build/Build/Products/Release/Pensum.app /Applications/
 ```
-
-Danach Pensum aus dem Programme-Ordner öffnen. In den Einstellungen kannst du *Bei der Anmeldung starten* einschalten.
 
 ## Deine Daten
 
@@ -93,7 +104,16 @@ Debug-Builds kennen ein paar Startargumente zum Ausprobieren:
 | `-demoStore YES` | Eigene Datei `Demo.store` mit Beispieldaten, deine echten Zeiten bleiben unberührt |
 | `-openOverview YES` | Öffnet die Übersicht direkt beim Start |
 | `-alwaysShowCheckIn YES` | Zeigt das Morgenfenster bei jedem Start |
-| `-snapshotOverview <Pfad>` | Speichert die Übersicht als PNG, mit `-snapshotDark YES` im dunklen Erscheinungsbild |
+| `-snapshotOverview <Pfad>` | Speichert die Übersicht als PNG, mit `-snapshotDark YES` im dunklen Erscheinungsbild und `-snapshotScale <n>` in n-facher Auflösung |
+
+### Neue Version veröffentlichen
+
+Jeder Push auf `main` baut die App und testet `PensumCore` ([Workflow](.github/workflows/release.yml)). Ein Release entsteht nur, wenn die Version neu ist:
+
+1. In Xcode beim Target *Pensum* unter *General → Version* die Versionsnummer erhöhen, zum Beispiel auf `0.2`.
+2. Committen und auf `main` pushen.
+
+Gibt es den Tag `v0.2` noch nicht, legt der Workflow ihn an und veröffentlicht ein Release mit der fertigen App als ZIP und den Änderungen seit dem letzten Release. Ohne neue Version hängt der Build nur als Artefakt am Workflow-Lauf. Die Build-Nummer zählt automatisch mit.
 
 ## Lizenz
 
