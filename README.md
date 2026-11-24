@@ -54,7 +54,7 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
 Pensum gibt es noch nicht als fertigen Download. Du baust es mit Xcode 26 selbst:
 
 ```bash
-git clone <repo-url> pensum
+git clone https://github.com/maxikuehn/pensum.git
 ```
 
 ```bash
