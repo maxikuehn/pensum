@@ -1,7 +1,7 @@
 import AppKit
 
 /// Symbol in der Menüleiste: der Rahmen mit Griffen aus der Übersicht,
-/// dazu unten rechts ein grüner Punkt, solange die Zeit läuft, und ein oranger während einer Pause.
+/// dazu unten rechts ein Punkt: grün, solange die Zeit läuft, orange während einer Pause, sonst rot.
 enum MenuBarIcon {
     enum State {
         case idle
@@ -20,25 +20,27 @@ enum MenuBarIcon {
             shape.windingRule = .evenOdd
 
             NSGraphicsContext.saveGraphicsState()
-            if state != .idle {
-                // Etwas Abstand um den Punkt, damit er sich vom Rahmen abhebt
-                let clip = NSBezierPath(rect: bounds)
-                clip.append(NSBezierPath(ovalIn: dot.insetBy(dx: -1.25, dy: -1.25)))
-                clip.windingRule = .evenOdd
-                clip.addClip()
-            }
+            // Etwas Abstand um den Punkt, damit er sich vom Rahmen abhebt
+            let clip = NSBezierPath(rect: bounds)
+            clip.append(NSBezierPath(ovalIn: dot.insetBy(dx: -1.25, dy: -1.25)))
+            clip.windingRule = .evenOdd
+            clip.addClip()
             NSColor.labelColor.setFill()
             shape.fill()
             NSGraphicsContext.restoreGraphicsState()
 
-            guard state != .idle else { return true }
-            (state == .running ? NSColor.systemGreen : NSColor.systemOrange).setFill()
+            let color: NSColor = switch state {
+            case .idle: .systemRed
+            case .running: .systemGreen
+            case .paused: .systemOrange
+            }
+            color.setFill()
             NSBezierPath(ovalIn: dot).fill()
             return true
         }
         image.isTemplate = false
         image.accessibilityDescription = switch state {
-        case .idle: "Shift"
+        case .idle: "Shift, Zeit läuft nicht"
         case .running: "Shift, Zeit läuft"
         case .paused: "Shift, Pause"
         }

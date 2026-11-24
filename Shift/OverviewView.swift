@@ -149,7 +149,7 @@ struct OverviewView: View {
                 pageButton("chevron.right", label: "Nächster Abschnitt", key: .rightArrow) { page(period.next) }
             }
             .background(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
-            // Feste Breite, damit Export und Pfeile beim Blättern nicht springen
+            // Feste Breite für bis zu „999,99 h“, damit Export und Pfeile beim Blättern nicht springen
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(HoursFormat.decimal(sum)) h")
                     .font(.system(size: 28, weight: .semibold))
@@ -164,7 +164,7 @@ struct OverviewView: View {
                     .fixedSize()
                 }
             }
-            .frame(width: 150, alignment: .trailing)
+            .frame(width: 128, alignment: .trailing)
         }
     }
 
@@ -475,6 +475,12 @@ private struct VacationButton: View {
 /// Zwei Punkte für die Monatshälfte; der dunkle gleitet beim Blättern hinüber.
 private struct PageDots: View {
     let half: Int
+    @State private var shown: Int
+
+    init(half: Int) {
+        self.half = half
+        _shown = State(initialValue: half)
+    }
 
     var body: some View {
         ZStack(alignment: .leading) {
@@ -485,11 +491,14 @@ private struct PageDots: View {
             Capsule()
                 .fill(Color.primary)
                 .frame(width: 6, height: 6)
-                .animation(.spring(response: 0.35, dampingFraction: 0.7)) { dot in
-                    dot.offset(x: half == 1 ? 0 : 11)
-                }
+                .offset(x: shown == 1 ? 0 : 11)
         }
         .accessibilityHidden(true)
+        // Erst nach dem Blättern animieren, damit nur die seitliche Bewegung zu sehen ist
+        // und nicht die neue Lage, wenn sich die Fensterhöhe ändert.
+        .onChange(of: half) { _, new in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { shown = new }
+        }
     }
 }
 
