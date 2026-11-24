@@ -355,12 +355,27 @@ struct OverviewView: View {
 
     #if DEBUG
     /// Zum Prüfen ohne Bildschirmfoto: Mit `-snapshotOverview <Pfad>` gestartet,
-    /// speichert die App nur dieses Fenster als PNG.
+    /// speichert die App nur dieses Fenster als PNG, in doppelter Auflösung.
+    /// `-snapshotDark YES` zeigt es dafür im dunklen Erscheinungsbild.
     private func writeSnapshotIfRequested() {
         guard let path = UserDefaults.standard.string(forKey: "snapshotOverview") else { return }
+        if UserDefaults.standard.bool(forKey: "snapshotDark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             guard let view = NSApp.windows.first(where: { $0.title == "Übersicht" })?.contentView,
-                  let image = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+                  let image = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * 2),
+                                               pixelsHigh: Int(view.bounds.height * 2), bitsPerSample: 8,
+                                               samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                               colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
+            else { return }
+            image.size = view.bounds.size
+            // Der Fensterhintergrund gehört nicht zur Ansicht und wird vorher gemalt
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: image)
+            view.effectiveAppearance.performAsCurrentDrawingAppearance {
+                NSColor.windowBackgroundColor.setFill()
+                view.bounds.fill()
+            }
+            NSGraphicsContext.restoreGraphicsState()
             view.cacheDisplay(in: view.bounds, to: image)
             try? image.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
         }
