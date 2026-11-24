@@ -22,6 +22,8 @@ struct DayTrack: View {
     @State private var hoveredGap: Int?
     /// Gerade wird über eine freie Stelle gezogen, um Arbeitszeit anzulegen.
     @State private var creating = false
+    /// Gerade wird über einen Block gezogen, um eine Pause anzulegen.
+    @State private var pausing: (start: Int, end: Int, minute: Int)?
 
     private static let height: CGFloat = 28
     private static let handleWidth: CGFloat = 14
@@ -85,6 +87,33 @@ struct DayTrack: View {
             }
     }
 
+    /// Über einen Block ziehen legt genau diesen Bereich als Pause an.
+    private func pauseGesture(minute: @escaping (CGFloat) -> Double) -> some Gesture {
+        DragGesture(minimumDistance: 4, coordinateSpace: .named("track"))
+            .onChanged { value in
+                let from = DayEditing.snap(minute(value.startLocation.x))
+                let to = DayEditing.snap(minute(value.location.x))
+                if let result = DayEditing.creatingPause(in: spans, from: from, to: to) {
+                    draft = result.spans
+                    pausing = (result.start, result.end, to >= from ? result.end : result.start)
+                    onDraft(result.spans)
+                } else {
+                    draft = nil
+                    pausing = nil
+                    onDraft(nil)
+                }
+            }
+            .onEnded { _ in
+                let result = draft
+                let pause = pausing
+                draft = nil
+                pausing = nil
+                onDraft(nil)
+                guard let result, let pause else { return }
+                commit(result, "Pause \(clock(pause.start)) – \(clock(pause.end)) eingefügt")
+            }
+    }
+
     // MARK: Teile
 
     private func background(width: CGFloat, x: @escaping (Int) -> CGFloat) -> some View {
@@ -102,7 +131,7 @@ struct DayTrack: View {
     private func gap(after index: Int, in shown: [DaySpan], x: (Int) -> CGFloat) -> some View {
         let start = shown[index].end
         let end = shown[index + 1].start
-        let hovered = hoveredGap == index && dragging == nil
+        let hovered = hoveredGap == index && dragging == nil && pausing == nil
         return ZStack {
             Hatch()
                 .background(hovered ? Color.dangerFill : .clear)
@@ -142,6 +171,7 @@ struct DayTrack: View {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .strokeBorder(color, lineWidth: 3)
                 )
+                .simultaneousGesture(pauseGesture(minute: minute))
                 .onTapGesture(count: 2, coordinateSpace: .named("track")) { location in
                     guard let result = DayEditing.insertingPause(into: spans, at: Int(minute(location.x))) else { return }
                     let pause = zip(result, result.dropFirst()).map { ($0.end, $1.start) }.first { pair in
@@ -240,7 +270,9 @@ struct DayTrack: View {
     /// Uhrzeit bzw. Hinweis über dem gezogenen Griff.
     @ViewBuilder
     private func bubble(in shown: [DaySpan], x: (Int) -> CGFloat) -> some View {
-        if let dragging {
+        if let pausing {
+            bubbleLabel("Pause \(clock(pausing.start)) – \(clock(pausing.end))", at: x(pausing.minute), danger: false)
+        } else if let dragging {
             let outcome = creating ? .keep : DayEditing.outcome(of: shown, index: dragging.index, edge: dragging.edge)
             let position = x(dragging.minute)
             let text = switch outcome {
@@ -250,17 +282,23 @@ struct DayTrack: View {
                 ? "\(clock(shown[dragging.index].start)) – \(clock(shown[dragging.index].end))"
                 : clock(dragging.minute)
             }
-            Text(text)
-                .font(.system(size: 12, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(outcome == .delete ? Color.white : Color(nsColor: .windowBackgroundColor))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(RoundedRectangle(cornerRadius: 6).fill(outcome == .delete ? Color.shiftDanger : .primary))
-                .fixedSize()
-                .position(x: position, y: -12)
-                .allowsHitTesting(false)
+            bubbleLabel(text, at: position, danger: outcome == .delete)
         }
+    }
+}
+
+extension DayTrack {
+    fileprivate func bubbleLabel(_ text: String, at position: CGFloat, danger: Bool) -> some View {
+        Text(text)
+            .font(.system(size: 12, weight: .semibold))
+            .monospacedDigit()
+            .foregroundStyle(danger ? Color.white : Color(nsColor: .windowBackgroundColor))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(RoundedRectangle(cornerRadius: 6).fill(danger ? Color.shiftDanger : .primary))
+            .fixedSize()
+            .position(x: position, y: -12)
+            .allowsHitTesting(false)
     }
 }
 

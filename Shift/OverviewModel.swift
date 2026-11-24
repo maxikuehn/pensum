@@ -12,6 +12,15 @@ final class OverviewModel {
     private let calculator = DayCalculator()
     /// Wird bei jeder Änderung erhöht, damit die Übersicht neu liest.
     private var revision = 0
+    /// Gelesene Blöcke je Tag, gültig solange sich nichts geändert hat und dieselbe Minute ist.
+    @ObservationIgnored private var cache: (key: CacheKey, spans: [Date: [DaySpan]]) = (CacheKey(), [:])
+
+    private struct CacheKey: Equatable {
+        var revision = -1
+        var running: PersistentIdentifier?
+        var runningStart: Date?
+        var minute = 0
+    }
 
     var mainProjectName: String {
         didSet { UserDefaults.standard.set(mainProjectName, forKey: "mainProjectName") }
@@ -26,9 +35,17 @@ final class OverviewModel {
     // MARK: Arbeitszeit
 
     func spans(on day: Date, now: Date) -> [DaySpan] {
-        _ = revision
-        _ = tracker.running
-        return calculator.spans(of: tracker.intervals(on: day), on: day, now: now)
+        let key = CacheKey(
+            revision: revision,
+            running: tracker.running?.persistentModelID,
+            runningStart: tracker.running?.start,
+            minute: Int(now.timeIntervalSinceReferenceDate / 60)
+        )
+        if cache.key != key { cache = (key, [:]) }
+        if let spans = cache.spans[day] { return spans }
+        let spans = calculator.spans(of: tracker.intervals(on: day), on: day, now: now)
+        cache.spans[day] = spans
+        return spans
     }
 
     func apply(_ spans: [DaySpan], on day: Date) {

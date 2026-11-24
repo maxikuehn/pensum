@@ -52,14 +52,14 @@ struct OverviewView: View {
         .onChange(of: dayEnd) { offset = Double(TimeWindow.home) }
     }
 
-    private func spans(on day: Date, now: Date) -> [DaySpan] {
-        if let liveEdit, liveEdit.day == day { return liveEdit.spans }
-        return model.spans(on: day, now: now)
-    }
-
     private func content(now: Date) -> some View {
         let days = period.days(calendar: calendar)
-        let totals = Dictionary(uniqueKeysWithValues: days.map { ($0, spans(on: $0, now: now).reduce(0) { $0 + $1.minutes }) })
+        // Einmal pro Darstellung lesen und an die Zeilen weitergeben
+        let stored = Dictionary(uniqueKeysWithValues: days.map { ($0, model.spans(on: $0, now: now)) })
+        let totals = Dictionary(uniqueKeysWithValues: days.map { day in
+            let spans = liveEdit?.day == day ? liveEdit!.spans : stored[day, default: []]
+            return (day, spans.reduce(0) { $0 + $1.minutes })
+        })
 
         return VStack(alignment: .leading, spacing: 0) {
             header(days: days, totals: totals, now: now)
@@ -72,10 +72,10 @@ struct OverviewView: View {
                 ForEach(sections(of: days), id: \.self) { section in
                     switch section {
                     case .day(let day):
-                        dayRow(day, now: now)
+                        dayRow(day, spans: stored[day, default: []], now: now)
                     case .daysOff(let group):
                         // Freie Tage mit Zeit, Urlaub oder heute bleiben immer sichtbar
-                        let pinned = group.contains { calendar.isDate($0, inSameDayAs: now) || model.isVacation($0) || !spans(on: $0, now: now).isEmpty }
+                        let pinned = group.contains { calendar.isDate($0, inSameDayAs: now) || model.isVacation($0) || !stored[$0, default: []].isEmpty }
                         let isOpen = pinned || openDaysOff.contains(group[0])
                         if !pinned {
                             DaysOffToggle(days: group, isOpen: isOpen) {
@@ -85,7 +85,7 @@ struct OverviewView: View {
                             }
                         }
                         if isOpen {
-                            ForEach(group, id: \.self) { dayRow($0, now: now) }
+                            ForEach(group, id: \.self) { dayRow($0, spans: stored[$0, default: []], now: now) }
                         }
                     }
                 }
@@ -97,10 +97,11 @@ struct OverviewView: View {
         .overlay(alignment: .bottom) { undoNotice }
     }
 
-    private func dayRow(_ day: Date, now: Date) -> some View {
+    private func dayRow(_ day: Date, spans: [DaySpan], now: Date) -> some View {
         DayRow(
             model: model,
             day: day,
+            spans: spans,
             now: now,
             offset: offset,
             liveSpans: liveEdit?.day == day ? liveEdit?.spans : nil,
@@ -418,6 +419,7 @@ private struct UndoEntry {
 private struct DayRow: View {
     let model: OverviewModel
     let day: Date
+    let spans: [DaySpan]
     let now: Date
     let offset: Double
     /// Während des Ziehens: die Blöcke mit dem gezogenen Griff, für die Summe
@@ -429,9 +431,9 @@ private struct DayRow: View {
     private let calendar = Calendar.current
 
     var body: some View {
-        let spans = model.spans(on: day, now: now)
         let isToday = calendar.isDate(day, inSameDayAs: now)
-        let isWeekend = calendar.isDateInWeekend(day)
+        // Tage, die laut Einstellungen keine Arbeitstage sind, werden wie Wochenenden gezeigt
+        let isWeekend = !Preferences.workdays.contains(calendar.component(.weekday, from: day))
         let isVacation = model.isVacation(day)
 
         HStack(spacing: OverviewView.spacing) {

@@ -117,6 +117,23 @@ public enum DayEditing {
         return (result, index)
     }
 
+    /// Legt beim Ziehen über einen Block genau diesen Bereich als Pause an (in beide Richtungen).
+    /// Die Pause bleibt innerhalb des Blocks, in dem das Ziehen begann; kürzer als 5 Minuten ergibt keine Pause.
+    public static func creatingPause(in spans: [DaySpan], from: Int, to: Int) -> (spans: [DaySpan], start: Int, end: Int)? {
+        guard let index = spans.firstIndex(where: { $0.start <= from && from <= $0.end }) else { return nil }
+        let span = spans[index]
+        let clamp = { (minute: Int) in min(max(minute, span.start), span.end) }
+        let start = clamp(min(from, to))
+        let end = clamp(max(from, to))
+        guard end - start >= step else { return nil }
+        var parts: [DaySpan] = []
+        if start > span.start { parts.append(DaySpan(start: span.start, end: start)) }
+        if end < span.end || span.isRunning { parts.append(DaySpan(start: end, end: span.end, isRunning: span.isRunning)) }
+        var result = spans
+        result.replaceSubrange(index...index, with: parts)
+        return (result, start, end)
+    }
+
     /// Fügt in eine freie Stelle einen 30-Minuten-Block ein, zentriert auf `minute`.
     /// Ist weniger Platz, wird er kürzer; `nil`, wenn kein sinnvoller Platz ist.
     public static func insertingBlock(into spans: [DaySpan], at minute: Int) -> [DaySpan]? {

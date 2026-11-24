@@ -109,3 +109,27 @@ private let day = [span("8:00", "12:00"), span("12:45", "17:00")]
 @Test func draggingInsideABlockCreatesNothing() {
     #expect(DayEditing.creatingBlock(in: day, from: m("9:00"), to: m("10:00")) == nil)
 }
+
+@Test func draggingOverABlockCreatesAPause() {
+    let result = DayEditing.creatingPause(in: day, from: m("10:00"), to: m("10:30"))
+    #expect(result?.spans == [span("8:00", "10:00"), span("10:30", "12:00"), span("12:45", "17:00")])
+    #expect(result?.start == m("10:00"))
+    #expect(result?.end == m("10:30"))
+}
+
+@Test func pauseDraggedBackwardsAndPastTheEdgeShortensTheBlock() {
+    let result = DayEditing.creatingPause(in: day, from: m("16:30"), to: m("16:00"))
+    #expect(result?.spans == [span("8:00", "12:00"), span("12:45", "16:00"), span("16:30", "17:00")])
+    let trimmed = DayEditing.creatingPause(in: day, from: m("16:30"), to: m("18:00"))
+    #expect(trimmed?.spans == [span("8:00", "12:00"), span("12:45", "16:30")])
+}
+
+@Test func pauseInRunningBlockKeepsTheRestRunning() {
+    let result = DayEditing.creatingPause(in: [span("8:00", "11:25", running: true)], from: m("10:00"), to: m("10:20"))
+    #expect(result?.spans == [span("8:00", "10:00"), span("10:20", "11:25", running: true)])
+}
+
+@Test func noPauseOutsideBlocksOrWhenTooShort() {
+    #expect(DayEditing.creatingPause(in: day, from: m("12:20"), to: m("13:00")) == nil)
+    #expect(DayEditing.creatingPause(in: day, from: m("10:00"), to: m("10:00")) == nil)
+}

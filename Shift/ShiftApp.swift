@@ -12,12 +12,13 @@ struct ShiftApp: App {
     init() {
         let container = Self.makeContainer()
         let tracker = Tracker(context: container.mainContext)
-        let checkIn = CheckInController(tracker: tracker)
+        let overview = OverviewModel(tracker: tracker, context: container.mainContext)
+        let checkIn = CheckInController(tracker: tracker) { overview.isVacation($0) }
         self.container = container
         self.checkIn = checkIn
         monitor = ActivityMonitor(tracker: tracker) { checkIn.userBecameActive(at: $0) }
         _tracker = State(initialValue: tracker)
-        _overview = State(initialValue: OverviewModel(tracker: tracker, context: container.mainContext))
+        _overview = State(initialValue: overview)
     }
 
     var body: some Scene {

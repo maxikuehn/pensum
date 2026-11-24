@@ -7,6 +7,7 @@ import SwiftUI
 /// ohne den Fokus zu stehlen, solange heute noch keine Zeit erfasst ist.
 final class CheckInController {
     private let tracker: Tracker
+    private let isVacation: (Date) -> Bool
     private let defaults = UserDefaults.standard
     private var panel: NSPanel?
 
@@ -21,8 +22,9 @@ final class CheckInController {
         set { defaults.set(newValue, forKey: "dayOff") }
     }
 
-    init(tracker: Tracker) {
+    init(tracker: Tracker, isVacation: @escaping (Date) -> Bool) {
         self.tracker = tracker
+        self.isVacation = isVacation
         watchTracker()
     }
 
@@ -32,7 +34,7 @@ final class CheckInController {
             firstActive = date
         }
         let policy = CheckInPolicy(workdays: Preferences.workdays)
-        let shouldAsk = Preferences.checkInEnabled && policy.shouldAsk(
+        let shouldAsk = Preferences.checkInEnabled && !isVacation(date) && policy.shouldAsk(
             now: date,
             hasWorkToday: !tracker.intervals(on: date).isEmpty,
             isRunning: tracker.isRunning,
@@ -42,7 +44,12 @@ final class CheckInController {
     }
 
     private func show() {
-        guard panel == nil, let since = firstActive else { return }
+        guard let since = firstActive else { return }
+        // Ein noch offenes Fenster von einem früheren Tag durch ein aktuelles ersetzen
+        if let panel {
+            panel.orderOut(nil)
+            self.panel = nil
+        }
         let view = CheckInView(
             since: since,
             onStart: { [weak self] in
