@@ -59,6 +59,12 @@ final class OverviewModel {
         info(for: day)?.isVacation ?? false
     }
 
+    func setVacation(_ day: Date, _ isVacation: Bool) {
+        let info = info(for: day, create: true)!
+        info.isVacation = isVacation
+        save()
+    }
+
     func toggleVacation(_ day: Date) {
         let info = info(for: day, create: true)!
         info.isVacation.toggle()

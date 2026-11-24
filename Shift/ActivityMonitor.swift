@@ -61,12 +61,14 @@ final class ActivityMonitor {
 
     private func tick() {
         let now = Date.now
-        tracker.closeStaleBlock(now: now)
-        guard !isAsleep, !isDisplayAsleep, !isLocked else { return }
-
+        let awake = !isAsleep && !isDisplayAsleep && !isLocked
         // Sekunden seit der letzten Eingabe über Maus, Trackpad oder Tastatur
-        let idle = CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
-        if idle >= TimeInterval(Preferences.idleMinutes * 60) {
+        let idle = awake ? CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: CGEventType(rawValue: ~0)!) : .infinity
+        let threshold = TimeInterval(Preferences.idleMinutes * 60)
+        tracker.handleDayChange(now: now, userIsActive: idle < threshold)
+        guard awake else { return }
+
+        if idle >= threshold {
             if !isIdle {
                 isIdle = true
                 away(at: now.addingTimeInterval(-idle))

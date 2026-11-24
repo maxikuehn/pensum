@@ -13,7 +13,11 @@ struct ShiftApp: App {
         let container = Self.makeContainer()
         let tracker = Tracker(context: container.mainContext)
         let overview = OverviewModel(tracker: tracker, context: container.mainContext)
-        let checkIn = CheckInController(tracker: tracker) { overview.isVacation($0) }
+        let checkIn = CheckInController(
+            tracker: tracker,
+            isVacation: { overview.isVacation($0) },
+            markDayOff: { overview.setVacation($0, true) }
+        )
         self.container = container
         self.checkIn = checkIn
         monitor = ActivityMonitor(tracker: tracker) { checkIn.userBecameActive(at: $0) }

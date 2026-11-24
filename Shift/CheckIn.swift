@@ -8,6 +8,7 @@ import SwiftUI
 final class CheckInController {
     private let tracker: Tracker
     private let isVacation: (Date) -> Bool
+    private let markDayOff: (Date) -> Void
     private let defaults = UserDefaults.standard
     private var panel: NSPanel?
 
@@ -22,9 +23,10 @@ final class CheckInController {
         set { defaults.set(newValue, forKey: "dayOff") }
     }
 
-    init(tracker: Tracker, isVacation: @escaping (Date) -> Bool) {
+    init(tracker: Tracker, isVacation: @escaping (Date) -> Bool, markDayOff: @escaping (Date) -> Void) {
         self.tracker = tracker
         self.isVacation = isVacation
+        self.markDayOff = markDayOff
         watchTracker()
     }
 
@@ -52,13 +54,14 @@ final class CheckInController {
         }
         let view = CheckInView(
             since: since,
-            onStart: { [weak self] in
-                self?.tracker.start(at: since)
+            onStart: { [weak self] date in
+                self?.tracker.start(at: date)
                 self?.hide()
             },
             onLater: { [weak self] in self?.hide() },
             onDayOff: { [weak self] in
                 self?.dayOff = .now
+                self?.markDayOff(.now)
                 self?.hide()
             }
         )
@@ -114,16 +117,27 @@ final class CheckInController {
 
 private struct CheckInView: View {
     let since: Date
-    let onStart: () -> Void
+    let onStart: (Date) -> Void
     let onLater: () -> Void
     let onDayOff: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // Jede Minute neu, falls das Fenster offen stehen bleibt
+        TimelineView(.periodic(from: .now, by: 60)) { context in
+            content(now: context.date)
+        }
+    }
+
+    private func content(now: Date) -> some View {
+        let sinceText = since.formatted(date: .omitted, time: .shortened)
+        // Liegt das Aufklappen schon eine Weile zurück, gibt es die Wahl zwischen damals und jetzt
+        let offersNow = now.timeIntervalSince(since) >= 10 * 60
+
+        return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Arbeitszeit starten?")
                     .font(.headline)
-                Text("Aufgeklappt um \(since.formatted(date: .omitted, time: .shortened))")
+                Text("Aufgeklappt um \(sinceText)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -132,17 +146,23 @@ private struct CheckInView: View {
                 Button("Heute frei", action: onDayOff)
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
-                Spacer()
                 Button("Später", action: onLater)
-                    .buttonStyle(PrimaryButtonStyle(isProminent: false))
-                    .frame(width: 76)
-                Button("Start", action: onStart)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if offersNow {
+                    Button("Ab jetzt") { onStart(.now) }
+                        .buttonStyle(PrimaryButtonStyle(isProminent: false))
+                        .frame(width: 80)
+                }
+                Button(offersNow ? "Ab \(sinceText)" : "Start") { onStart(since) }
                     .buttonStyle(PrimaryButtonStyle(isProminent: true))
-                    .frame(width: 76)
+                    .frame(width: 80)
+                    .monospacedDigit()
             }
         }
         .padding(14)
-        .frame(width: 300)
+        .frame(width: 340)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

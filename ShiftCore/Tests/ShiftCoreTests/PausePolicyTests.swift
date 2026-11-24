@@ -45,3 +45,28 @@ private let policy = PausePolicy(calendar: calendar)
     let end = policy.staleEnd(blockStart: date(23, 8, 0), lastActivity: nil, now: date(24, 8, 5))
     #expect(end == date(23, 8, 0))
 }
+
+@Test func workingThroughMidnightContinuesOnTheNewDay() {
+    let change = policy.dayChange(blockStart: date(23, 21, 0), lastActivity: date(24, 0, 0, 30), now: date(24, 0, 0, 30), userIsActive: true)
+    #expect(change == .split(at: date(24, 0, 0)))
+}
+
+@Test func forgottenBlockEndsWhenNobodyIsThere() {
+    let change = policy.dayChange(blockStart: date(23, 8, 0), lastActivity: date(23, 18, 12), now: date(24, 8, 5), userIsActive: false)
+    #expect(change == .end(at: date(23, 18, 12)))
+}
+
+@Test func blockFromOlderDaysIsNeverStretchedOverNights() {
+    let change = policy.dayChange(blockStart: date(21, 8, 0), lastActivity: date(21, 17, 0), now: date(24, 8, 5), userIsActive: true)
+    #expect(change == .end(at: date(21, 17, 0)))
+}
+
+@Test func todaysBlockIsLeftAlone() {
+    #expect(policy.dayChange(blockStart: date(24, 8, 0), lastActivity: nil, now: date(24, 9, 0), userIsActive: true) == .none)
+}
+
+@Test func restartInTheMorningDoesNotCountTheNight() {
+    // Block lief beim Herunterfahren noch; morgens ist man zwar aktiv, war es aber nicht bis eben
+    let change = policy.dayChange(blockStart: date(23, 20, 0), lastActivity: date(23, 22, 40), now: date(24, 8, 5), userIsActive: true)
+    #expect(change == .end(at: date(23, 22, 40)))
+}

@@ -80,13 +80,21 @@ final class Tracker {
         defaults.set(date, forKey: "lastActivity")
     }
 
-    /// Läuft noch ein Block von einem früheren Tag, endet er mit der letzten Aktivität an jenem Tag.
-    func closeStaleBlock(now: Date) {
-        guard let block = running,
-              let end = policy.staleEnd(blockStart: block.start, lastActivity: defaults.object(forKey: "lastActivity") as? Date, now: now)
-        else { return }
-        Logger.shift.info("Block vom \(block.start) war noch offen, endet um \(end)")
-        stop(at: end)
+    /// Läuft noch ein Block von einem früheren Tag: Arbeitest du gerade über Mitternacht,
+    /// endet er um 0:00 und läuft am neuen Tag weiter; sonst endet er mit deiner letzten Aktivität an jenem Tag.
+    func handleDayChange(now: Date, userIsActive: Bool) {
+        guard let block = running else { return }
+        let lastActivity = defaults.object(forKey: "lastActivity") as? Date
+        switch policy.dayChange(blockStart: block.start, lastActivity: lastActivity, now: now, userIsActive: userIsActive) {
+        case .none:
+            break
+        case .split(let midnight):
+            stop(at: midnight)
+            start(at: midnight)
+        case .end(let end):
+            Logger.shift.info("Block vom \(block.start) war noch offen, endet um \(end)")
+            stop(at: end)
+        }
     }
 
     func intervals(on day: Date, calendar: Calendar = .current) -> [WorkInterval] {
