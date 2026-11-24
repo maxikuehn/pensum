@@ -51,9 +51,11 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
 
 ## Installieren
 
-1. Die neueste `Pensum-….zip` unter [Releases](https://github.com/maxikuehn/pensum/releases/latest) laden und entpacken.
-2. `Pensum.app` in den Programme-Ordner ziehen und öffnen.
+1. Die neueste `Pensum-….dmg` unter [Releases](https://github.com/maxikuehn/pensum/releases/latest) laden und öffnen.
+2. Pensum im Fenster auf den Programme-Ordner ziehen und von dort starten.
 3. In den Einstellungen kannst du *Bei der Anmeldung starten* einschalten.
+
+Wer lieber entpackt, findet dort auch eine `.zip` mit der App.
 
 Pensum ist nicht bei Apple notarisiert. Beim ersten Öffnen meldet macOS deshalb, dass es die App nicht überprüfen kann. Unter **Systemeinstellungen → Datenschutz & Sicherheit** steht dann weiter unten *Dennoch öffnen*. Alternativ entfernt dieser Befehl die Sperre:
 
@@ -114,7 +116,7 @@ Jeder Push auf `main` baut die App und testet `PensumCore` ([Workflow](.github/w
 1. In Xcode beim Target *Pensum* unter *General → Version* die Versionsnummer erhöhen, zum Beispiel auf `0.2`.
 2. Committen und auf `main` pushen.
 
-Gibt es den Tag `v0.2` noch nicht, legt der Workflow ihn an und veröffentlicht ein Release mit der fertigen App als ZIP und den Änderungen seit dem letzten Release. Ohne neue Version hängt der Build nur als Artefakt am Workflow-Lauf. Die Build-Nummer zählt automatisch mit.
+Gibt es den Tag `v0.2` noch nicht, legt der Workflow ihn an und veröffentlicht ein Release mit der fertigen App als Disk-Image und ZIP und den Änderungen seit dem letzten Release. Ohne neue Version hängt der Build nur als Artefakt am Workflow-Lauf. Die Build-Nummer zählt automatisch mit.
 
 ## Lizenz
 

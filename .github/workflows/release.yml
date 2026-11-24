@@ -53,12 +53,39 @@ jobs:
         run: |
           ditto -c -k --sequesterRsrc --keepParent build/Build/Products/Release/Pensum.app "Pensum-${{ steps.version.outputs.version }}.zip"
 
+      # Disk-Image mit der App links und dem Programme-Ordner rechts zum Hineinziehen.
+      # Gelingt das Finder-Layout auf dem Runner nicht, entsteht es ohne Layout.
+      - name: Disk-Image erstellen
+        run: |
+          app=build/Build/Products/Release/Pensum.app
+          dmg="Pensum-${{ steps.version.outputs.version }}.dmg"
+          mkdir dmg && cp -R "$app" dmg/
+          brew install --quiet create-dmg
+          if ! create-dmg \
+              --volname "Pensum" \
+              --volicon "$app/Contents/Resources/AppIcon.icns" \
+              --window-pos 200 120 \
+              --window-size 540 340 \
+              --icon-size 128 \
+              --text-size 13 \
+              --icon "Pensum.app" 140 150 \
+              --hide-extension "Pensum.app" \
+              --app-drop-link 400 150 \
+              "$dmg" dmg/; then
+            echo "::warning::Finder-Layout nicht möglich, Disk-Image ohne Layout"
+            rm -f "$dmg"
+            ln -s /Applications dmg/Applications
+            hdiutil create -volname Pensum -srcfolder dmg -ov -format UDZO "$dmg"
+          fi
+
       - name: Release anlegen
         if: steps.version.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${{ steps.version.outputs.version }}" "Pensum-${{ steps.version.outputs.version }}.zip" \
+          gh release create "v${{ steps.version.outputs.version }}" \
+            "Pensum-${{ steps.version.outputs.version }}.dmg" \
+            "Pensum-${{ steps.version.outputs.version }}.zip" \
             --title "Pensum ${{ steps.version.outputs.version }}" \
             --target "$GITHUB_SHA" \
             --generate-notes
@@ -68,5 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Pensum-${{ steps.version.outputs.version }}-build-${{ github.run_number }}
-          path: Pensum-${{ steps.version.outputs.version }}.zip
+          path: |
+            Pensum-${{ steps.version.outputs.version }}.dmg
+            Pensum-${{ steps.version.outputs.version }}.zip
           retention-days: 14
