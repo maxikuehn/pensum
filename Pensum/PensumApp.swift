@@ -4,6 +4,7 @@ import SwiftUI
 
 @main
 struct PensumApp: App {
+    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     private let container: ModelContainer
     private let monitor: ActivityMonitor
     private let checkIn: CheckInController
@@ -33,7 +34,7 @@ struct PensumApp: App {
         MenuBarExtra {
             MenuBarView(tracker: tracker)
         } label: {
-            Image(nsImage: MenuBarIcon.image(tracker.isRunning ? .running : tracker.awaySince != nil ? .paused : .idle))
+            MenuBarLabel(state: tracker.isRunning ? .running : tracker.awaySince != nil ? .paused : .idle, appDelegate: appDelegate)
         }
         .menuBarExtraStyle(.window)
         .modelContainer(container)
