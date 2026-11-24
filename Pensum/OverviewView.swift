@@ -346,15 +346,16 @@ struct OverviewView: View {
 
     #if DEBUG
     /// Zum Prüfen ohne Bildschirmfoto: Mit `-snapshotOverview <Pfad>` gestartet,
-    /// speichert die App nur dieses Fenster als PNG, in doppelter Auflösung.
+    /// speichert die App nur dieses Fenster als PNG, in doppelter Auflösung oder so vielfach wie `-snapshotScale <n>`.
     /// `-snapshotDark YES` zeigt es dafür im dunklen Erscheinungsbild.
     private func writeSnapshotIfRequested() {
         guard let path = UserDefaults.standard.string(forKey: "snapshotOverview") else { return }
         if UserDefaults.standard.bool(forKey: "snapshotDark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
+        let scale = max(UserDefaults.standard.double(forKey: "snapshotScale"), 2)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             guard let view = NSApp.windows.first(where: { $0.isOverview })?.contentView,
-                  let image = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * 2),
-                                               pixelsHigh: Int(view.bounds.height * 2), bitsPerSample: 8,
+                  let image = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * scale),
+                                               pixelsHigh: Int(view.bounds.height * scale), bitsPerSample: 8,
                                                samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
                                                colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
             else { return }
