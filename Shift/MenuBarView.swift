@@ -5,6 +5,7 @@ import SwiftUI
 struct MenuBarView: View {
     let tracker: Tracker
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
     private let calculator = DayCalculator()
 
     private func menuRow(_ title: String, shortcut: String, action: @escaping () -> Void) -> some View {
@@ -53,6 +54,11 @@ struct MenuBarView: View {
                         NSApplication.shared.activate()
                     }
                     .keyboardShortcut("o")
+                    menuRow("Einstellungen", shortcut: "⌘,") {
+                        openSettings()
+                        NSApplication.shared.activate()
+                    }
+                    .keyboardShortcut(",")
                     menuRow("Shift beenden", shortcut: "⌘Q") {
                         NSApplication.shared.terminate(nil)
                     }

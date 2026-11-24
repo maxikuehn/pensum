@@ -2,10 +2,9 @@ import AppKit
 import CoreGraphics
 
 /// Erkennt Pausen aus Systemereignissen: Zuklappen bzw. Ruhezustand, Bildschirm aus, Sperren
-/// und 15 Minuten ohne Maus oder Tastatur. Zurück bist du erst, wenn keiner dieser Zustände mehr gilt.
+/// und eine einstellbare Zeit ohne Maus oder Tastatur (Standard 15 Minuten). Zurück bist du erst, wenn keiner dieser Zustände mehr gilt.
 final class ActivityMonitor {
     private let tracker: Tracker
-    private let idleThreshold: TimeInterval = 15 * 60
     private var isAsleep = false
     private var isDisplayAsleep = false
     private var isLocked = false
@@ -67,7 +66,7 @@ final class ActivityMonitor {
 
         // Sekunden seit der letzten Eingabe über Maus, Trackpad oder Tastatur
         let idle = CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
-        if idle >= idleThreshold {
+        if idle >= TimeInterval(Preferences.idleMinutes * 60) {
             if !isIdle {
                 isIdle = true
                 away(at: now.addingTimeInterval(-idle))

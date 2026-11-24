@@ -7,7 +7,6 @@ import SwiftUI
 /// ohne den Fokus zu stehlen, solange heute noch keine Zeit erfasst ist.
 final class CheckInController {
     private let tracker: Tracker
-    private let policy = CheckInPolicy()
     private let defaults = UserDefaults.standard
     private var panel: NSPanel?
 
@@ -32,7 +31,8 @@ final class CheckInController {
         if let first = firstActive, Calendar.current.isDate(first, inSameDayAs: date) {} else {
             firstActive = date
         }
-        let shouldAsk = policy.shouldAsk(
+        let policy = CheckInPolicy(workdays: Preferences.workdays)
+        let shouldAsk = Preferences.checkInEnabled && policy.shouldAsk(
             now: date,
             hasWorkToday: !tracker.intervals(on: date).isEmpty,
             isRunning: tracker.isRunning,

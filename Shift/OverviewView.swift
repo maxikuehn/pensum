@@ -1,6 +1,7 @@
 import AppKit
 import ShiftCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Die Übersicht: eine Monatshälfte, jeder Tag eine Zeile mit Zeitleiste und Summe.
 struct OverviewView: View {
@@ -110,6 +111,16 @@ struct OverviewView: View {
                     .monospacedDigit()
             }
             Spacer()
+            Button { export(days: days, now: now) } label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 32, height: 26)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .background(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
+            .keyboardShortcut("e", modifiers: .command)
+            .accessibilityLabel("Als CSV exportieren")
             HStack(spacing: 0) {
                 pageButton("chevron.left", label: "Vorheriger Abschnitt", key: .leftArrow) { page(period.previous) }
                 Divider().frame(height: 16)
@@ -142,6 +153,37 @@ struct OverviewView: View {
         .buttonStyle(.plain)
         .keyboardShortcut(key, modifiers: .command)
         .accessibilityLabel(label)
+    }
+
+    /// Speichert die angezeigte Monatshälfte als CSV für Excel.
+    private func export(days: [Date], now: Date) {
+        var used = Set<String>()
+        let exportDays = days.map { day in
+            let spans = model.spans(on: day, now: now)
+            let split = model.split(on: day, total: spans.reduce(0) { $0 + $1.minutes })
+            used.formUnion(split.map(\.project.key))
+            return ExportDay(
+                date: day,
+                spans: spans,
+                isVacation: model.isVacation(day),
+                projects: Dictionary(uniqueKeysWithValues: split.map { ($0.project.key, $0.minutes) })
+            )
+        }
+        let projects = model.projects.filter { !$0.isHidden || used.contains($0.key) }.map { (id: $0.key, name: $0.name) }
+        let csv = CSVExport.make(days: exportDays, mainProject: model.mainProjectName, projects: projects)
+
+        let range = period.dayNumbers(calendar: calendar)
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = String(format: "Arbeitszeit %d-%02d %d.-%d.csv", period.year, period.month, range.lowerBound, range.upperBound)
+        NSApplication.shared.activate()
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            // Mit BOM, damit Excel Umlaute richtig erkennt
+            try Data(("\u{FEFF}" + csv).utf8).write(to: url)
+        } catch {
+            NSAlert(error: error).runModal()
+        }
     }
 
     private func page(_ target: HalfMonth) {

@@ -36,6 +36,10 @@ struct ShiftApp: App {
         // Zum Ausprobieren: mit `-openOverview YES` starten, dann ist die Übersicht sofort offen
         .defaultLaunchBehavior(UserDefaults.standard.bool(forKey: "openOverview") ? .presented : .suppressed)
         .modelContainer(container)
+
+        Settings {
+            SettingsView()
+        }
     }
 
     /// Die Daten liegen in ~/Library/Application Support/Shift/Shift.store.
