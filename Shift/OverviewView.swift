@@ -20,6 +20,9 @@ struct OverviewView: View {
     @AppStorage(Preferences.dayStartKey) private var dayStart = 7
     @AppStorage(Preferences.dayEndKey) private var dayEnd = 20
     @AppStorage(Preferences.csvExportKey) private var csvExportEnabled = true
+    @AppStorage(Preferences.workdaysKey) private var workdays = "23456"
+    /// Aufgeklappte Gruppen freier Tage, erkannt am ersten Tag der Gruppe
+    @State private var openDaysOff: Set<Date> = []
 
     private let calendar = Calendar.current
 
@@ -66,17 +69,25 @@ struct OverviewView: View {
             Divider()
             VStack(spacing: 0) {
                 axis
-                ForEach(days, id: \.self) { day in
-                    DayRow(
-                        model: model,
-                        day: day,
-                        now: now,
-                        offset: offset,
-                        liveSpans: liveEdit?.day == day ? liveEdit?.spans : nil,
-                        onDraft: { draft in liveEdit = draft.map { (day, $0) } },
-                        onEdit: edit,
-                        onManageProjects: { showsProjects = true }
-                    )
+                ForEach(sections(of: days), id: \.self) { section in
+                    switch section {
+                    case .day(let day):
+                        dayRow(day, now: now)
+                    case .daysOff(let group):
+                        // Freie Tage mit Zeit, Urlaub oder heute bleiben immer sichtbar
+                        let pinned = group.contains { calendar.isDate($0, inSameDayAs: now) || model.isVacation($0) || !spans(on: $0, now: now).isEmpty }
+                        let isOpen = pinned || openDaysOff.contains(group[0])
+                        if !pinned {
+                            DaysOffToggle(days: group, isOpen: isOpen) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    if isOpen { openDaysOff.remove(group[0]) } else { openDaysOff.insert(group[0]) }
+                                }
+                            }
+                        }
+                        if isOpen {
+                            ForEach(group, id: \.self) { dayRow($0, now: now) }
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 24)
@@ -84,6 +95,42 @@ struct OverviewView: View {
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { rowsFrame = $0 }
         }
         .overlay(alignment: .bottom) { undoNotice }
+    }
+
+    private func dayRow(_ day: Date, now: Date) -> some View {
+        DayRow(
+            model: model,
+            day: day,
+            now: now,
+            offset: offset,
+            liveSpans: liveEdit?.day == day ? liveEdit?.spans : nil,
+            onDraft: { draft in liveEdit = draft.map { (day, $0) } },
+            onEdit: edit,
+            onManageProjects: { showsProjects = true }
+        )
+    }
+
+    private enum Section: Hashable {
+        case day(Date)
+        /// Aufeinanderfolgende Tage, die laut Einstellungen keine Arbeitstage sind
+        case daysOff([Date])
+    }
+
+    private func sections(of days: [Date]) -> [Section] {
+        let workdays = Set(workdays.compactMap(\.wholeNumberValue))
+        var sections: [Section] = []
+        var group: [Date] = []
+        for day in days {
+            if workdays.contains(calendar.component(.weekday, from: day)) {
+                if !group.isEmpty { sections.append(.daysOff(group)) }
+                group = []
+                sections.append(.day(day))
+            } else {
+                group.append(day)
+            }
+        }
+        if !group.isEmpty { sections.append(.daysOff(group)) }
+        return sections
     }
 
     // MARK: Kopf
@@ -469,6 +516,41 @@ private struct VacationButton: View {
         .buttonStyle(.plain)
         .onHover { hovered = $0 }
         .accessibilityLabel(isOn ? "Urlaub entfernen" : "Urlaub eintragen")
+    }
+}
+
+/// Zusammengeklappte freie Tage: nur eine schmale Zeile mit einem Knopf zum Aufklappen.
+private struct DaysOffToggle: View {
+    let days: [Date]
+    let isOpen: Bool
+    let toggle: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        let calendar = Calendar.current
+        let label = { (day: Date) in "\(Formats.weekdays[calendar.component(.weekday, from: day) - 1]) \(calendar.component(.day, from: day))." }
+        let text = days.count == 1 ? label(days[0]) : "\(label(days[0])) – \(label(days[days.count - 1]))"
+
+        Button(action: toggle) {
+            HStack(spacing: 5) {
+                Text(text)
+                Image(systemName: isOpen ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+            }
+            .font(.system(size: 11))
+            .foregroundStyle(hovered ? .primary : .secondary)
+            .monospacedDigit()
+            .padding(.horizontal, 9)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(hovered ? Color.hoverFill : .clear))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+        .frame(maxWidth: .infinity)
+        .frame(height: 24)
+        .overlay(alignment: .bottom) { Divider() }
+        .accessibilityLabel(isOpen ? "\(text) zuklappen" : "\(text) aufklappen")
     }
 }
 

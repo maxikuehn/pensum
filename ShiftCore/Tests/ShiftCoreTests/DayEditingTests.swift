@@ -88,3 +88,24 @@ private let day = [span("8:00", "12:00"), span("12:45", "17:00")]
     let tight = [span("8:00", "12:00"), span("12:10", "17:00")]
     #expect(DayEditing.insertingBlock(into: tight, at: m("12:05")) == nil)
 }
+
+@Test func draggingOverFreeSpaceCreatesABlock() {
+    let result = DayEditing.creatingBlock(in: day, from: m("17:30"), to: m("19:00"))
+    #expect(result?.spans == day + [span("17:30", "19:00")])
+    #expect(result?.index == 2)
+}
+
+@Test func draggingBackwardsWorksToo() {
+    let result = DayEditing.creatingBlock(in: [], from: m("10:00"), to: m("8:30"))
+    #expect(result?.spans == [span("8:30", "10:00")])
+}
+
+@Test func draggedBlockStopsBeforeTheNextBlock() {
+    let result = DayEditing.creatingBlock(in: day, from: m("12:10"), to: m("15:00"))
+    #expect(result?.spans == [span("8:00", "12:00"), span("12:10", "12:40"), span("12:45", "17:00")])
+    #expect(result?.index == 1)
+}
+
+@Test func draggingInsideABlockCreatesNothing() {
+    #expect(DayEditing.creatingBlock(in: day, from: m("9:00"), to: m("10:00")) == nil)
+}

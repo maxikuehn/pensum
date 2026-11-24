@@ -20,6 +20,8 @@ struct DayTrack: View {
     @State private var draft: [DaySpan]?
     @State private var dragging: (index: Int, edge: SpanEdge, minute: Int)?
     @State private var hoveredGap: Int?
+    /// Gerade wird über eine freie Stelle gezogen, um Arbeitszeit anzulegen.
+    @State private var creating = false
 
     private static let height: CGFloat = 28
     private static let handleWidth: CGFloat = 14
@@ -38,6 +40,7 @@ struct DayTrack: View {
                         let added = result.first { !spans.contains($0) }
                         commit(result, added.map { "Arbeitszeit \(clock($0.start)) – \(clock($0.end)) eingefügt" })
                     }
+                    .simultaneousGesture(createGesture(minute: minute))
 
                 ForEach(Array(shown.indices.dropLast()), id: \.self) { index in
                     gap(after: index, in: shown, x: x)
@@ -55,6 +58,31 @@ struct DayTrack: View {
             .overlay { bubble(in: shown, x: x) }
         }
         .frame(height: Self.height)
+    }
+
+    /// Über eine freie Stelle ziehen legt genau diesen Bereich als Arbeitszeit an.
+    private func createGesture(minute: @escaping (CGFloat) -> Double) -> some Gesture {
+        DragGesture(minimumDistance: 4, coordinateSpace: .named("track"))
+            .onChanged { value in
+                let from = DayEditing.snap(minute(value.startLocation.x))
+                let to = DayEditing.snap(minute(value.location.x))
+                guard let result = DayEditing.creatingBlock(in: spans, from: from, to: to) else { return }
+                let span = result.spans[result.index]
+                creating = true
+                draft = result.spans
+                onDraft(result.spans)
+                dragging = to >= from ? (result.index, .end, span.end) : (result.index, .start, span.start)
+            }
+            .onEnded { _ in
+                let created = creating ? draft.flatMap { spans in dragging.map { spans[$0.index] } } : nil
+                let result = draft
+                creating = false
+                draft = nil
+                dragging = nil
+                onDraft(nil)
+                guard let created, let result, created.minutes >= DayEditing.deleteBelow else { return }
+                commit(result, "Arbeitszeit \(clock(created.start)) – \(clock(created.end)) eingefügt")
+            }
     }
 
     // MARK: Teile
@@ -104,7 +132,7 @@ struct DayTrack: View {
 
     private func block(_ span: DaySpan, index: Int, in shown: [DaySpan], x: @escaping (Int) -> CGFloat, minute: @escaping (CGFloat) -> Double) -> some View {
         let width = max(0, x(span.end) - x(span.start))
-        let armed = dragging?.index == index && span.minutes < DayEditing.deleteBelow
+        let armed = !creating && dragging?.index == index && span.minutes < DayEditing.deleteBelow
         let color = armed ? Color.shiftDanger : .shiftYellow
 
         return ZStack(alignment: .leading) {
@@ -213,12 +241,14 @@ struct DayTrack: View {
     @ViewBuilder
     private func bubble(in shown: [DaySpan], x: (Int) -> CGFloat) -> some View {
         if let dragging {
-            let outcome = DayEditing.outcome(of: shown, index: dragging.index, edge: dragging.edge)
+            let outcome = creating ? .keep : DayEditing.outcome(of: shown, index: dragging.index, edge: dragging.edge)
             let position = x(dragging.minute)
             let text = switch outcome {
             case .delete: "Löschen"
             case .join: "Verbinden"
-            case .keep: clock(dragging.minute)
+            case .keep: creating
+                ? "\(clock(shown[dragging.index].start)) – \(clock(shown[dragging.index].end))"
+                : clock(dragging.minute)
             }
             Text(text)
                 .font(.system(size: 12, weight: .semibold))

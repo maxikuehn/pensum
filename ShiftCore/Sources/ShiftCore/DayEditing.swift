@@ -100,6 +100,23 @@ public enum DayEditing {
         return result
     }
 
+    /// Legt beim Ziehen über eine freie Stelle einen Block von `from` bis `to` an (in beide Richtungen).
+    /// Der Block bleibt in der freien Lücke, in der das Ziehen begann; `nil`, wenn dort schon ein Block ist.
+    /// Gibt die neuen Blöcke und die Position des neuen Blocks zurück.
+    public static func creatingBlock(in spans: [DaySpan], from: Int, to: Int) -> (spans: [DaySpan], index: Int)? {
+        guard !spans.contains(where: { $0.start <= from && from <= $0.end }) else { return nil }
+        let index = spans.firstIndex { from < $0.start } ?? spans.count
+        let lower = index > 0 ? spans[index - 1].end + step : 0
+        let upper = index < spans.count ? spans[index].start - step : dayEnd
+        guard lower < upper else { return nil }
+        let clamp = { (minute: Int) in min(max(minute, lower), upper) }
+        let a = clamp(from)
+        let b = clamp(to)
+        var result = spans
+        result.insert(DaySpan(start: min(a, b), end: max(a, b)), at: index)
+        return (result, index)
+    }
+
     /// Fügt in eine freie Stelle einen 30-Minuten-Block ein, zentriert auf `minute`.
     /// Ist weniger Platz, wird er kürzer; `nil`, wenn kein sinnvoller Platz ist.
     public static func insertingBlock(into spans: [DaySpan], at minute: Int) -> [DaySpan]? {
