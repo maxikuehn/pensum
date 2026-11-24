@@ -6,7 +6,7 @@
 
 <p align="center">
   Arbeitszeit erfassen, ohne daran zu denken.<br>
-  Eine Mac-App für die Menüleiste: startet morgens, bemerkt Pausen, beendet wenn du Feierabend machst.
+  Eine Mac-App für die Menüleiste: startet morgens, bemerkt Pausen und hört auf, wenn du Feierabend machst.
 </p>
 
 <p align="center">
@@ -46,7 +46,7 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
 - **Bearbeiten wie Videoschnitt.** Jeder Arbeitsblock hat Griffe an beiden Enden. Ziehen verschiebt Beginn und Ende, ein Klick auf eine Pause entfernt sie, ein Doppelklick fügt eine Pause oder einen neuen Block ein. Zieht man einen Block ganz zusammen, wird er gelöscht. Alles lässt sich mit ⌘Z zurücknehmen.
 - **Halbe Monate.** Die Übersicht zeigt den 1. bis 15. und den 16. bis Monatsende, mit Summe und Tagesdurchschnitt. Wochenenden sind eingeklappt, Urlaubstage tragen eine Palme.
 - **Dezimal und zu deinen Gunsten.** Zeiten erscheinen als `8,25 h`. Der Beginn wird auf 5 Minuten abgerundet, das Ende aufgerundet.
-- **Nebenprojekte.** Pro Tag lässt sich ein Teil der Zeit in Viertelstunden auf Projekte verteilen, etwa Pre-Sales oder interne Arbeit.
+- **Nebenprojekte.** Pro Tag lässt sich ein Teil der Zeit in Viertelstunden auf Projekte verteilen, etwa Pre-Sales oder interne Arbeit. Farbige Punkte zeigen, an welchen Tagen das so ist, ein Klick auf die Summe oben zeigt die Stunden je Projekt.
 - **CSV-Export.** Auf Wunsch exportiert Pensum den halben Monat als CSV mit Semikolon, die Excel und die meisten Zeiterfassungen direkt öffnen.
 
 ## Installieren
@@ -114,10 +114,10 @@ Debug-Builds kennen ein paar Startargumente zum Ausprobieren:
 
 Jeder Push auf `main` baut die App und testet `PensumCore` ([Workflow](.github/workflows/release.yml)). Ein Release entsteht nur, wenn die Version neu ist:
 
-1. In Xcode beim Target *Pensum* unter *General → Version* die Versionsnummer erhöhen, zum Beispiel auf `0.2`.
+1. In Xcode beim Target *Pensum* unter *General → Version* die Versionsnummer erhöhen, zum Beispiel von `0.2` auf `0.3`.
 2. Committen und auf `main` pushen.
 
-Gibt es den Tag `v0.2` noch nicht, legt der Workflow ihn an und veröffentlicht ein Release mit der fertigen App als Disk-Image und ZIP und den Änderungen seit dem letzten Release. Ohne neue Version hängt der Build nur als Artefakt am Workflow-Lauf. Die Build-Nummer zählt automatisch mit.
+Gibt es den Tag `v0.3` noch nicht, legt der Workflow ihn an und veröffentlicht ein Release mit der fertigen App als Disk-Image und ZIP und den Änderungen seit dem letzten Release. Ohne neue Version hängt der Build nur als Artefakt am Workflow-Lauf. Die Build-Nummer zählt automatisch mit.
 
 ## Lizenz
 
