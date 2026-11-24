@@ -198,21 +198,8 @@ struct OverviewView: View {
             }
             .background(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
             // Feste Breite für bis zu „999,99 h“, damit Export und Pfeile beim Blättern nicht springen
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("\(HoursFormat.decimal(sum)) h")
-                    .font(.system(size: 28, weight: .semibold))
-                    .monospacedDigit()
-                if !perProject.isEmpty {
-                    HStack(spacing: 10) {
-                        ForEach(perProject, id: \.project.id) { entry in
-                            ProjectChip(color: .project(entry.project.colorIndex), text: "\(entry.project.name) \(HoursFormat.decimal(entry.minutes)) h")
-                        }
-                    }
-                    .font(.system(size: 12))
-                    .fixedSize()
-                }
-            }
-            .frame(width: 128, alignment: .trailing)
+            PeriodTotal(total: sum, perProject: perProject, mainProjectName: model.mainProjectName)
+                .frame(width: 128, alignment: .trailing)
         }
     }
 
@@ -598,21 +585,6 @@ private struct PageDots: View {
         .onChange(of: half) { _, new in
             withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { shown = new }
         }
-    }
-}
-
-struct ProjectChip: View {
-    let color: Color
-    let text: String
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Circle().fill(color).frame(width: 7, height: 7)
-            Text(text)
-        }
-        .foregroundStyle(.secondary)
-        .monospacedDigit()
-        .lineLimit(1)
     }
 }
 

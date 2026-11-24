@@ -22,14 +22,13 @@ struct DayTotal: View {
             VStack(alignment: .trailing, spacing: 1) {
                 Text("\(HoursFormat.decimal(total)) h")
                     .font(.system(size: 15, weight: .semibold))
+                // Nur Punkte, damit die Zeile auch bei mehreren Projekten nicht breiter wird
                 if !split.isEmpty {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 4) {
                         ForEach(split, id: \.project.id) { entry in
-                            ProjectChip(color: .project(entry.project.colorIndex), text: HoursFormat.decimal(entry.minutes))
+                            Circle().fill(Color.project(entry.project.colorIndex)).frame(width: 7, height: 7)
                         }
                     }
-                    .font(.system(size: 11))
-                    .fixedSize()
                 }
             }
             .monospacedDigit()
@@ -48,6 +47,67 @@ struct DayTotal: View {
                 onManageProjects()
             }
         }
+    }
+}
+
+/// Summe der Monatshälfte im Kopf der Übersicht. Ein Klick zeigt, wie viel davon auf welches Projekt fällt.
+struct PeriodTotal: View {
+    let total: Int
+    let perProject: [(project: Project, minutes: Int)]
+    let mainProjectName: String
+
+    @State private var isOpen = false
+    @State private var hovered = false
+
+    var body: some View {
+        Button {
+            isOpen.toggle()
+        } label: {
+            Text("\(HoursFormat.decimal(total)) h")
+                .font(.system(size: 28, weight: .semibold))
+                .monospacedDigit()
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(RoundedRectangle(cornerRadius: 8).fill(isOpen || hovered ? Color.hoverFill : .clear))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, -8)
+        .onHover { hovered = $0 }
+        .accessibilityLabel("Stunden je Projekt")
+        .popover(isPresented: $isOpen, arrowEdge: .bottom) {
+            let used = perProject.reduce(0) { $0 + $1.minutes }
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(perProject.filter { $0.minutes > 0 }, id: \.project.id) { entry in
+                    row(color: .project(entry.project.colorIndex), name: entry.project.name, minutes: entry.minutes)
+                }
+                row(color: .workYellow, name: mainProjectName, minutes: total - used)
+                Divider().padding(.vertical, 6)
+                HStack {
+                    Text("Gesamt")
+                    Spacer()
+                    Text("\(HoursFormat.decimal(total)) h")
+                }
+                .fontWeight(.semibold)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 28)
+            }
+            .font(.system(size: 13))
+            .monospacedDigit()
+            .padding(.vertical, 8)
+            .frame(width: 240)
+        }
+    }
+
+    private func row(color: Color, name: String, minutes: Int) -> some View {
+        HStack(spacing: 9) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(name).lineLimit(1)
+            Spacer()
+            Text("\(HoursFormat.decimal(minutes)) h")
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 28)
     }
 }
 
