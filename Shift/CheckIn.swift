@@ -152,11 +152,11 @@ private struct CheckInView: View {
                 Spacer()
                 if offersNow {
                     Button("Ab jetzt") { onStart(.now) }
-                        .buttonStyle(PrimaryButtonStyle(isProminent: false))
+                        .buttonStyle(PrimaryButtonStyle(kind: .neutral))
                         .frame(width: 80)
                 }
                 Button(offersNow ? "Ab \(sinceText)" : "Start") { onStart(since) }
-                    .buttonStyle(PrimaryButtonStyle(isProminent: true))
+                    .buttonStyle(PrimaryButtonStyle(kind: .start))
                     .frame(width: 80)
                     .monospacedDigit()
             }

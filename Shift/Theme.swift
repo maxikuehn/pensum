@@ -40,20 +40,33 @@ extension Color {
     }
 }
 
-/// Großer Knopf im Menübar-Fenster: gelb zum Starten, neutral zum Stoppen.
+/// Großer Knopf: gelb zum Starten, rot zum Stoppen, neutral für alles andere.
 struct PrimaryButtonStyle: ButtonStyle {
-    var isProminent: Bool
+    enum Kind {
+        case start
+        case stop
+        case neutral
+    }
+
+    var kind: Kind
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        let fill: AnyShapeStyle = switch kind {
+        case .start: AnyShapeStyle(Color.shiftYellow)
+        case .stop: AnyShapeStyle(Color.shiftDanger)
+        case .neutral: AnyShapeStyle(.quaternary)
+        }
+        let text: Color = switch kind {
+        case .start: .black.opacity(0.85)
+        case .stop: .white
+        case .neutral: .primary
+        }
+        return configuration.label
             .font(.body.weight(.semibold))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 7)
-            .foregroundStyle(isProminent ? Color.black.opacity(0.85) : Color.primary)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isProminent ? AnyShapeStyle(Color.shiftYellow) : AnyShapeStyle(.quaternary))
-            )
+            .foregroundStyle(text)
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(fill))
             .opacity(configuration.isPressed ? 0.75 : 1)
             .contentShape(Rectangle())
     }

@@ -23,6 +23,8 @@ final class ActivityMonitor {
         observe(workspace, NSWorkspace.didWakeNotification) { $0.isAsleep = false; $0.back() }
         observe(workspace, NSWorkspace.screensDidSleepNotification) { $0.isDisplayAsleep = true; $0.away() }
         observe(workspace, NSWorkspace.screensDidWakeNotification) { $0.isDisplayAsleep = false; $0.back() }
+        // Herunterfahren, Neustart oder Abmelden: laufenden Block pausieren
+        observe(workspace, NSWorkspace.willPowerOffNotification) { $0.away() }
 
         let distributed = DistributedNotificationCenter.default()
         observe(distributed, Notification.Name("com.apple.screenIsLocked")) { $0.isLocked = true; $0.away() }
@@ -31,11 +33,13 @@ final class ActivityMonitor {
         timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
+        // Wurde die App ohne Abmeldung beendet (Absturz, Strom weg), gilt die Zeit seit der letzten Aktivität als Pause
+        tracker.recoverAfterLaunch(now: .now)
         tick()
-        // Erst nach dem Start der App melden, vorher lassen sich keine Fenster zeigen
+        // Erst nach dem Start der App melden, vorher lassen sich keine Fenster zeigen.
+        // Wie beim Aufklappen: am selben Tag geht es nach der Pause weiter, sonst fragt das Fenster am Morgen.
         Task { @MainActor [weak self] in
-            guard let self, !self.isIdle else { return }
-            self.onActive(.now)
+            self?.back()
         }
     }
 

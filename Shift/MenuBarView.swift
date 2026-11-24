@@ -39,7 +39,7 @@ struct MenuBarView: View {
                 Button(tracker.isRunning ? "Stopp" : "Start") {
                     tracker.isRunning ? tracker.stop() : tracker.start()
                 }
-                .buttonStyle(PrimaryButtonStyle(isProminent: !tracker.isRunning))
+                .buttonStyle(PrimaryButtonStyle(kind: tracker.isRunning ? .stop : .start))
 
                 Divider()
 

@@ -75,6 +75,17 @@ final class Tracker {
         }
     }
 
+    /// Beim Start der App: Steht noch ein Block offen und war seit Minuten niemand aktiv
+    /// (App oder Mac ohne Abmeldung beendet), wird er ab der letzten Aktivität pausiert.
+    func recoverAfterLaunch(now: Date) {
+        guard let block = running, awaySince == nil,
+              let last = defaults.object(forKey: "lastActivity") as? Date,
+              now.timeIntervalSince(last) > 5 * 60
+        else { return }
+        Logger.shift.info("Block lief beim Beenden noch, Pause ab \(last)")
+        beginAway(at: max(last, block.start))
+    }
+
     /// Merkt sich, wann du zuletzt aktiv warst, für einen vergessenen Block über Nacht.
     func noteActivity(at date: Date) {
         defaults.set(date, forKey: "lastActivity")
