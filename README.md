@@ -19,6 +19,7 @@
 
 <p align="center">
   <a href="https://github.com/maxikuehn/pensum/releases/latest"><img src="https://img.shields.io/github/v/release/maxikuehn/pensum?label=Version&color=F6C431" alt="Neueste Version"></a>
+  <a href="https://github.com/maxikuehn/pensum/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/maxikuehn/pensum/release.yml?branch=main&label=Build" alt="Build-Status"></a>
   <img src="https://img.shields.io/badge/macOS-26%2B-black" alt="macOS 26 und neuer">
   <img src="https://img.shields.io/badge/Swift-6-F05138" alt="Swift 6">
   <img src="https://img.shields.io/badge/SwiftUI-SwiftData-0A84FF" alt="SwiftUI und SwiftData">
