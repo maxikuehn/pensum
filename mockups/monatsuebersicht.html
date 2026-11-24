@@ -1,0 +1,872 @@
+<title>Shift Monatsübersicht</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: ein macOS-Fenster, jede Zeile ein Tag einer Monatshälfte, Zeit läuft von links (7 Uhr) nach rechts (20 Uhr), Summe rechts */
+:root {
+  --desk: #dfe2e8;
+  --win: #ffffff;
+  --bar: #f4f4f6;
+  --fg: #1d1d1f;
+  --muted: #6e6e76;
+  --line: #e6e6eb;
+  --track: #d6d6dc;
+  --y: #f6c431;
+  --y-fill: rgba(246, 196, 49, .26);
+  --chev: #1d1d1f;
+  --hatch: rgba(60, 60, 67, .28);
+  --gap-hover: rgba(255, 69, 58, .14);
+  --danger: #e0342a;
+  --today: rgba(246, 196, 49, .10);
+  --hover: rgba(60, 60, 67, .08);
+  --toast: #1d1d1f;
+  --toast-fg: #ffffff;
+  --pop: #ffffff;
+  --scrim: rgba(20, 22, 28, .18);
+  --p1: #3a7ff6; --p2: #a259e6; --p3: #1fa79a; --p4: #e0528a;
+  --shadow: 0 24px 60px rgba(30, 34, 45, .18), 0 2px 6px rgba(30, 34, 45, .08);
+  --sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sys-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #121317; --win: #232327; --bar: #2b2b30; --fg: #f2f2f5; --muted: #9a9aa2;
+    --line: #36363c; --track: #3b3b42; --y: #f5c02e; --y-fill: rgba(245, 192, 46, .22);
+    --chev: #1d1d1f; --hatch: rgba(235, 235, 245, .26); --gap-hover: rgba(255, 69, 58, .22);
+    --danger: #ff6b61; --today: rgba(245, 192, 46, .08); --hover: rgba(235, 235, 245, .10);
+    --toast: #f2f2f5; --toast-fg: #1d1d1f; --pop: #2c2c31; --scrim: rgba(0, 0, 0, .45);
+    --p1: #5a9bff; --p2: #bf80ff; --p3: #3cc9b8; --p4: #ff6fa5;
+    --shadow: 0 24px 60px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .06);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #121317; --win: #232327; --bar: #2b2b30; --fg: #f2f2f5; --muted: #9a9aa2;
+  --line: #36363c; --track: #3b3b42; --y: #f5c02e; --y-fill: rgba(245, 192, 46, .22);
+  --chev: #1d1d1f; --hatch: rgba(235, 235, 245, .26); --gap-hover: rgba(255, 69, 58, .22);
+  --danger: #ff6b61; --today: rgba(245, 192, 46, .08); --hover: rgba(235, 235, 245, .10);
+  --toast: #f2f2f5; --toast-fg: #1d1d1f; --pop: #2c2c31; --scrim: rgba(0, 0, 0, .45);
+  --p1: #5a9bff; --p2: #bf80ff; --p3: #3cc9b8; --p4: #ff6fa5;
+  --shadow: 0 24px 60px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .06);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--desk); color: var(--fg); font-family: var(--sys); font-size: 13px;
+  padding-block: 40px 96px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-font-smoothing: antialiased;
+}
+
+.window {
+  max-width: 1040px; margin: 0 auto; background: var(--win);
+  border-radius: 12px; box-shadow: var(--shadow); overflow: hidden;
+}
+.titlebar {
+  display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px;
+  background: var(--bar); border-bottom: 1px solid var(--line);
+}
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot:nth-child(1) { background: #ff5f57; } .dot:nth-child(2) { background: #febc2e; } .dot:nth-child(3) { background: #28c840; }
+.titlebar .name { flex: 1; text-align: center; font-weight: 600; font-size: 13px; color: var(--muted); margin-right: 52px; }
+
+header.summary {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
+  padding: 22px 24px 14px;
+}
+.titleline { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+header h1 { margin: 0; font-family: var(--sys-display); font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.range { color: var(--muted); font-family: var(--sys-display); font-size: 22px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.pager { display: inline-flex; gap: 5px; align-self: center; }
+.pager i { width: 6px; height: 6px; border-radius: 50%; background: var(--track); }
+.pager i.on { background: var(--fg); }
+header .sub { color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.right { display: flex; align-items: center; gap: 22px; }
+.nav { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--win); }
+.nav button {
+  width: 32px; height: 26px; border: 0; background: transparent; color: var(--fg); cursor: pointer;
+  display: grid; place-items: center;
+}
+.nav button + button { border-left: 1px solid var(--line); }
+.nav button:hover { background: var(--hover); }
+.nav button:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+.nav svg { width: 8px; height: 12px; }
+.monthtotal { text-align: right; font-variant-numeric: tabular-nums; }
+.monthtotal b { display: block; font-family: var(--sys-display); font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+.monthtotal span { color: var(--muted); font-size: 12px; }
+
+.scroll { overflow-x: auto; border-top: 1px solid var(--line); }
+.table { --off: 420; min-width: 720px; padding: 0 24px 18px; user-select: none; -webkit-user-select: none; }
+
+.row {
+  display: grid; grid-template-columns: 74px 1fr 82px; align-items: center; gap: 14px;
+  height: 44px; border-bottom: 1px solid var(--line);
+}
+.row.axis { height: 30px; position: sticky; top: 0; background: var(--win); z-index: 3; }
+.row.week { height: 26px; color: var(--muted); font-size: 11px; }
+.row.weekend .date { color: var(--muted); }
+.row.weekend .vp:not(:has(.seg)) { opacity: .55; }
+.row.today { background: var(--today); margin: 0 -24px; padding: 0 24px; }
+
+.date { display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+.date .dow { color: var(--muted); width: 20px; font-size: 12px; }
+.date .num { font-weight: 600; font-size: 14px; }
+.today .date .num::after { content: "Heute"; margin-left: 6px; font-size: 10px; font-weight: 600; color: var(--chev); background: var(--y); padding: 1px 5px; border-radius: 4px; vertical-align: 1px; }
+
+/* Der ganze Tag (0–24 Uhr) liegt in jeder Zeile, sichtbar ist ein 13-Stunden-Fenster ab --off Minuten */
+.axisvp { position: relative; height: 100%; overflow: hidden; }
+.axisline, .track { position: absolute; top: 0; bottom: 0; left: 0; width: calc(100% * 1440 / 780); transform: translateX(calc(var(--off) * -100% / 1440)); }
+.axisline span { position: absolute; bottom: 11px; transform: translateX(4px); color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.axis .lead { display: flex; justify-content: flex-end; align-self: end; padding-bottom: 9px; }
+.axis .total { display: flex; justify-content: space-between; align-items: end; align-self: end; padding-bottom: 9px; }
+.pan {
+  width: 16px; height: 16px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--muted);
+  display: grid; place-items: center; cursor: pointer;
+}
+.pan svg { width: 5px; height: 8px; }
+.pan:hover { color: var(--fg); background: var(--hover); }
+.pan:focus-visible { outline: 2px solid var(--fg); }
+
+.vp { position: relative; height: 28px; border-radius: 8px; background: var(--track); overflow: hidden; }
+.track { background-image: repeating-linear-gradient(90deg, transparent 0 calc(100% / 24 - 1px), var(--win) calc(100% / 24 - 1px) calc(100% / 24)); }
+.vp.vacation { background: repeating-linear-gradient(135deg, var(--y-fill) 0 6px, transparent 6px 12px); border: 1px solid var(--line); }
+.vp .off { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+/* Arbeitszeit außerhalb des sichtbaren Fensters */
+.vp.more-l::before, .vp.more-r::after { content: ""; position: absolute; top: 0; bottom: 0; width: 10px; z-index: 6; pointer-events: none; }
+.vp.more-l::before { left: 0; background: linear-gradient(90deg, var(--y), transparent); }
+.vp.more-r::after { right: 0; background: linear-gradient(270deg, var(--y), transparent); }
+.weeknote { text-align: right; padding-right: 2px; letter-spacing: .02em; }
+
+.seg {
+  position: absolute; top: 0; bottom: 0; border: 3px solid var(--y); border-left-width: 0; border-right-width: 0;
+  background: var(--y-fill); border-radius: 7px; container-type: inline-size; z-index: 2;
+  transition: background-color .12s, border-color .12s;
+}
+.seg .lbl {
+  position: absolute; inset: 0 16px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; font-variant-numeric: tabular-nums;
+}
+@container (max-width: 92px) { .seg .lbl { display: none; } }
+.h {
+  position: absolute; top: -3px; bottom: -3px; width: 14px; background: var(--y);
+  display: grid; place-items: center; cursor: ew-resize; touch-action: none; outline: none;
+  transition: background-color .12s;
+}
+.h.l { left: 0; border-radius: 7px 0 0 7px; }
+.h.r { right: 0; border-radius: 0 7px 7px 0; }
+.h svg { width: 7px; height: 12px; }
+.h path { stroke: var(--chev); }
+.h:focus-visible { box-shadow: 0 0 0 2px var(--win), 0 0 0 4px var(--fg); z-index: 4; }
+.seg.running { border-radius: 7px 0 0 7px; }
+.live { position: absolute; right: -2px; top: -3px; bottom: -3px; width: 4px; border-radius: 2px; background: var(--y); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+
+/* Zu klein gezogen: beim Loslassen wird der Block gelöscht */
+.seg.armed { border-color: var(--danger); background-color: var(--gap-hover); }
+.seg.armed .h, .seg.armed .live { background: var(--danger); }
+.seg.armed .h path { stroke: #fff; }
+
+.gap {
+  position: absolute; top: 5px; bottom: 5px; padding: 0; border: 0; border-radius: 4px; cursor: pointer;
+  background: repeating-linear-gradient(135deg, var(--hatch) 0 2px, transparent 2px 6px);
+  color: var(--muted); font: inherit; z-index: 1;
+}
+.gap::before { content: ""; position: absolute; inset: -5px -6px; }
+.gap .x {
+  position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
+  background: var(--danger); color: #fff; display: grid; place-items: center; opacity: 0; transform: scale(.7);
+  transition: opacity .12s, transform .12s; z-index: 5;
+}
+.gap .x svg { width: 8px; height: 8px; }
+.gap:hover, .gap:focus-visible { background-color: var(--gap-hover); outline: none; }
+.gap:hover .x, .gap:focus-visible .x { opacity: 1; transform: scale(1); }
+
+.total { text-align: right; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.total b { font-size: 15px; font-weight: 600; }
+.total small { display: block; color: var(--muted); font-size: 11px; }
+.sumbtn {
+  display: inline-block; padding: 3px 6px; margin-right: -6px; border: 0; border-radius: 6px; background: transparent;
+  color: inherit; font: inherit; text-align: right; cursor: pointer; line-height: 1.15;
+}
+.sumbtn:hover, .sumbtn[aria-expanded="true"] { background: var(--hover); }
+.sumbtn:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+.sumbtn b { display: block; }
+.alloc, .split { display: flex; justify-content: flex-end; gap: 8px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.alloc span, .split span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.alloc i, .split i, .pdot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.split { font-size: 12px; margin-top: 2px; flex-wrap: wrap; }
+
+.pop {
+  position: fixed; z-index: 40; width: 270px; background: var(--pop); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .18); padding: 10px 0 6px; font-size: 13px;
+}
+.pop h3 { display: flex; justify-content: space-between; margin: 0; padding: 0 14px 8px; font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.prow { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 9px; padding: 4px 14px; min-height: 32px; }
+.prow .pname-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prow.main { color: var(--muted); }
+.prow.main .val { font-variant-numeric: tabular-nums; padding-right: 4px; }
+.step { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.step button { width: 24px; height: 22px; border: 0; background: transparent; color: var(--fg); cursor: pointer; font: inherit; font-size: 15px; line-height: 1; }
+.step button:hover:not(:disabled) { background: var(--hover); }
+.step button:disabled { opacity: .3; cursor: default; }
+.step button:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+.step output { min-width: 48px; text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+.step output.zero { color: var(--muted); }
+.pop hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
+.linkbtn { display: block; width: 100%; padding: 6px 14px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.linkbtn:hover { color: var(--fg); background: var(--hover); }
+.linkbtn:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+
+.scrim { position: fixed; inset: 0; z-index: 50; background: var(--scrim); display: grid; place-items: center; padding: 16px; }
+.sheet { width: min(400px, 100%); background: var(--pop); border-radius: 12px; box-shadow: var(--shadow); padding: 18px; }
+.sheet h2 { margin: 0 0 4px; font-family: var(--sys-display); font-size: 15px; font-weight: 600; }
+.sheet p { margin: 0 0 14px; color: var(--muted); font-size: 12px; }
+.plist { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.plist li { display: grid; grid-template-columns: 14px 14px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px 6px 10px; border-bottom: 1px solid var(--line); background: var(--pop); }
+.plist li:last-child { border-bottom: 0; }
+.plist li.dragging { opacity: .4; }
+.plist li.off .pname, .plist li.off .cdot { opacity: .45; }
+.grip { color: var(--muted); cursor: grab; display: grid; place-items: center; }
+.grip svg { width: 10px; height: 10px; }
+.cdot { width: 12px; height: 12px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; }
+.cdot:focus-visible, .eye:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.pname { width: 100%; min-width: 0; border: 0; border-radius: 4px; padding: 4px 5px; background: transparent; color: var(--fg); font: inherit; }
+.pname:focus { outline: 2px solid var(--y); background: var(--win); }
+.plist .rest { color: var(--muted); font-size: 12px; padding-right: 4px; }
+.eye { width: 26px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.eye:hover { background: var(--hover); color: var(--fg); }
+.eye svg { width: 16px; height: 16px; }
+.sheet .actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.btn { font: inherit; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--win); color: var(--fg); cursor: pointer; }
+.btn:hover { background: var(--hover); }
+.btn.primary { background: var(--y); border-color: var(--y); color: var(--chev); font-weight: 600; }
+.btn:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+
+.vac {
+  width: 28px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: var(--muted);
+  cursor: pointer; display: inline-grid; place-items: center; vertical-align: middle;
+}
+.vac svg { width: 16px; height: 16px; }
+.vac:hover { background: var(--hover); color: var(--fg); }
+.vac.on { background: var(--y-fill); color: var(--fg); }
+.vac:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+
+.bubble {
+  position: fixed; z-index: 20; pointer-events: none; transform: translate(-50%, -100%);
+  background: var(--toast); color: var(--toast-fg); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  padding: 4px 8px; border-radius: 6px; white-space: nowrap;
+}
+.bubble.danger { background: var(--danger); color: #fff; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px; background: var(--toast); color: var(--toast-fg);
+  padding: 9px 10px 9px 16px; border-radius: 10px; font-size: 13px; z-index: 30; max-width: calc(100% - 32px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+}
+.toast button { font: inherit; font-weight: 600; color: var(--y); background: transparent; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+.toast button:focus-visible { outline: 2px solid var(--y); }
+.note { max-width: 1040px; margin: 14px auto 0; color: var(--muted); font-size: 12px; text-align: center; }
+
+@media (prefers-reduced-motion: reduce) { .live { animation: none; } .gap .x, .seg, .h { transition: none; } }
+</style>
+
+<div class="window">
+  <div class="titlebar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="name">Shift</span></div>
+  <header class="summary">
+    <div>
+      <div class="titleline">
+        <h1 id="title"></h1>
+        <span class="range" id="range"></span>
+        <span class="pager" id="pager" aria-hidden="true"><i></i><i></i></span>
+      </div>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="right">
+      <div class="nav">
+        <button type="button" id="prev" aria-label="Vorheriger Abschnitt" title="Vorheriger Abschnitt"><svg viewBox="0 0 8 12" aria-hidden="true"><path d="M6.5 1 1.5 6l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button type="button" id="next" aria-label="Nächster Abschnitt" title="Nächster Abschnitt"><svg viewBox="0 0 8 12" aria-hidden="true"><path d="M1.5 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="monthtotal"><b id="mt"></b><div class="split" id="split"></div></div>
+    </div>
+  </header>
+  <div class="scroll"><div class="table" id="table"></div></div>
+</div>
+<p class="note">Entwurf mit Beispieldaten für November 2026. Änderungen bleiben nur bis zum Neuladen erhalten.</p>
+<div class="bubble" id="bubble" hidden></div>
+<div class="toast" id="toast" hidden><span id="toastText"></span><button id="undo" type="button">Rückgängig</button></div>
+<div class="pop" id="pop" role="dialog" aria-label="Projektzeit aufteilen" hidden></div>
+<div class="scrim" id="scrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mgrTitle">
+    <h2 id="mgrTitle">Projekte</h2>
+    <p>Zeit, die du keinem Nebenprojekt zuordnest, zählt zum Hauptprojekt. Ziehe Projekte, um die Reihenfolge zu ändern.</p>
+    <ul class="plist" id="plist"></ul>
+    <div class="actions">
+      <button type="button" class="btn" id="addProject">Projekt hinzufügen</button>
+      <button type="button" class="btn primary" id="doneProjects">Fertig</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const START = 0, END = 24 * 60, SPAN = END - START, SNAP = 5, PAUSE = 15, BLOCK = 30, ARM = 10;
+const VIEW = 13 * 60, HOME = 7 * 60; // sichtbares Fenster, standardmäßig 7–20 Uhr
+let off = HOME;
+const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const DOW = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+const floor5 = m => Math.floor(m / SNAP) * SNAP;
+const ceil5 = m => Math.ceil(m / SNAP) * SNAP;
+const key = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+const TODAY = key(2026, 10, 24);
+const NOW = ceil5(11 * 60 + 24);
+
+// Rohdaten wie vom System erfasst (minutengenau)
+const t = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+const seg = (a, b) => ({ s: t(a), e: b ? t(b) : null });
+const raw = {
+  2: [seg('8:07', '12:11'), seg('12:56', '17:38')],
+  3: [seg('7:52', '10:19'), seg('10:33', '12:28'), seg('13:12', '16:54')],
+  4: [seg('8:31', '12:02'), seg('12:44', '18:17')],
+  5: [seg('8:12', '11:43'), seg('12:21', '15:04'), seg('15:19', '17:31')],
+  6: [seg('8:01', '13:29')],
+  9: [seg('8:22', '12:13'), seg('13:01', '17:48')],
+  10: [seg('7:46', '11:58'), seg('12:41', '16:29'), seg('16:44', '18:06')],
+  11: [seg('8:16', '12:04'), seg('12:52', '17:13')],
+  12: [seg('9:03', '12:31'), seg('13:14', '18:38')],
+  13: 'Urlaub',
+  16: [seg('8:02', '10:04'), seg('10:16', '12:09'), seg('12:57', '17:03')],
+  17: [seg('8:26', '12:18'), seg('13:06', '17:44')],
+  18: [seg('7:57', '12:01'), seg('12:36', '16:08')],
+  19: [seg('8:11', '12:14'), seg('13:02', '17:23'), seg('17:39', '21:12')],
+  20: [seg('8:04', '13:58')],
+  23: [seg('8:13', '12:04'), seg('12:49', '17:36')],
+  24: [seg('8:03', '10:41'), seg('10:52', null)],
+};
+
+// Zu deinen Gunsten runden: Beginn abrunden, Ende aufrunden; überlappende Blöcke verschmelzen
+function norm(v) {
+  const out = [];
+  for (const s of v) {
+    const n = { s: floor5(s.s), e: s.e === null ? null : ceil5(s.e) };
+    const last = out[out.length - 1];
+    if (last && last.e !== null && n.s <= last.e) last.e = n.e === null ? null : Math.max(last.e, n.e);
+    else out.push(n);
+  }
+  return out;
+}
+const data = {};
+for (const [d, v] of Object.entries(raw)) data[key(2026, 10, +d)] = typeof v === 'string' ? v : norm(v);
+
+// Nebenprojekte: nur Stunden pro Tag, ohne Uhrzeit. Der Rest zählt zum Hauptprojekt.
+const QUARTER = 15;
+const COLORS = ['--p1', '--p2', '--p3', '--p4'];
+let mainName = 'Hauptprojekt';
+const projects = [
+  { id: 'presales', name: 'Pre-Sales', color: 0, hidden: false },
+  { id: 'intern', name: 'Intern', color: 1, hidden: false },
+  { id: 'q3', name: 'Ausschreibung Q3', color: 2, hidden: true },
+];
+const alloc = {
+  '2026-11-05': { presales: 60 },
+  '2026-11-11': { intern: 90 },
+  '2026-11-18': { presales: 60, intern: 30 },
+  '2026-11-23': { presales: 60 },
+};
+
+const pct = m => ((m - START) / SPAN) * 100;
+const endOf = s => s.e ?? NOW;
+const clock = m => Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+const dec = m => (m / 60).toFixed(2).replace('.', ',');
+const dayTotal = k => Array.isArray(data[k]) ? data[k].reduce((a, s) => a + endOf(s) - s.s, 0) : 0;
+const isoWeek = date => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  return Math.ceil(((d - Date.UTC(d.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
+};
+const chev = dir => `<svg viewBox="0 0 7 12" aria-hidden="true"><path d="${dir === 'l' ? 'M5.5 1 1.5 6l4 5' : 'M1.5 1l4 5-4 5'}" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const xIcon = '<svg viewBox="0 0 8 8" aria-hidden="true"><path d="M1 1l6 6M7 1 1 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const vacIcon = '<svg viewBox="0 0 16 16" aria-hidden="true">' +
+  '<path d="M1.5 14.5c1.6-1.7 3.8-2.5 6.3-2.5s4.7.8 6.3 2.5z" fill="currentColor"/>' +
+  '<path d="M8.8 12.3c-.1-2.9-.9-5.2-2.4-7.1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>' +
+  '<path d="M6.4 5.2C4.8 3.6 2.8 3.4 1.3 4.5c1.8.1 3.2.5 5.1.7zM6.4 5.2c.4-2 2-3.3 4-3.2-1.5.7-2.7 1.7-4 3.2zM6.4 5.2c2-.9 4.3-.5 5.8 1.1-1.9-.4-3.7-.7-5.8-1.1zM6.4 5.2c-2-.2-3.6.8-4.3 2.6 1.2-1.1 2.7-1.9 4.3-2.6z" fill="currentColor" stroke="currentColor" stroke-width=".6" stroke-linejoin="round"/>' +
+  '</svg>';
+
+const view = { y: 2026, m: 10, half: 2 };
+const daysIn = (y, m) => new Date(y, m + 1, 0).getDate();
+const span = () => view.half === 1 ? [1, 15] : [16, daysIn(view.y, view.m)];
+
+const table = document.getElementById('table');
+let rows = {};
+
+function render() {
+  table.innerHTML = '';
+  rows = {};
+  buildAxis();
+  const [a, b] = span();
+  for (let d = a; d <= b; d++) {
+    buildRow(view.y, view.m, d);
+    if (new Date(view.y, view.m, d).getDay() === 0) buildWeek(view.y, view.m, d);
+  }
+  document.getElementById('title').textContent = `${MONTHS[view.m]} ${view.y}`;
+  document.getElementById('range').textContent = `${a}.–${b}.`;
+  document.querySelectorAll('#pager i').forEach((el, i) => el.classList.toggle('on', i + 1 === view.half));
+  summary();
+  setOff(off);
+}
+
+/* Zeitfenster horizontal verschieben */
+function edges(k) {
+  const vp = rows[k] && rows[k].querySelector('.vp'), v = data[k];
+  if (!vp) return;
+  const list = Array.isArray(v) ? v : [];
+  vp.classList.toggle('more-l', list.some(s => s.s < off));
+  vp.classList.toggle('more-r', list.some(s => endOf(s) > off + VIEW));
+}
+function setOff(m) {
+  off = Math.min(END - VIEW, Math.max(START, m));
+  table.style.setProperty('--off', off);
+  document.getElementById('panL').style.visibility = off > START ? 'visible' : 'hidden';
+  document.getElementById('panR').style.visibility = off < END - VIEW ? 'visible' : 'hidden';
+  Object.keys(rows).forEach(edges);
+}
+const vpWidth = () => table.querySelector('.axisvp').getBoundingClientRect().width;
+table.addEventListener('wheel', ev => {
+  // Über der Uhrzeitleiste bewegt auch das normale Mausrad die Zeitleiste
+  const overAxis = ev.target.closest('.axis');
+  const dx = Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : (ev.shiftKey || overAxis ? ev.deltaY : 0);
+  if (!dx) return;
+  ev.preventDefault();
+  setOff(off + dx * VIEW / vpWidth());
+}, { passive: false });
+table.addEventListener('click', ev => {
+  const pan = ev.target.closest('.pan'); if (!pan) return;
+  setOff(Math.round((off + (pan.id === 'panL' ? -60 : 60)) / 60) * 60);
+});
+
+function buildAxis() {
+  const row = document.createElement('div');
+  row.className = 'row axis';
+  let ticks = '';
+  for (let h = 0; h < 24; h++) ticks += `<span style="left:${pct(h * 60)}%">${h}</span>`;
+  const arrow = d => `<svg viewBox="0 0 5 8" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  row.innerHTML = `<div class="lead"><button type="button" class="pan" id="panL" aria-label="Frühere Uhrzeiten zeigen">${arrow('M4 1 1 4l3 3')}</button></div>` +
+    `<div class="axisvp"><div class="axisline">${ticks}</div></div>` +
+    `<div class="total"><button type="button" class="pan" id="panR" aria-label="Spätere Uhrzeiten zeigen">${arrow('M1 1l3 3-3 3')}</button><small>Summe</small></div>`;
+  table.appendChild(row);
+}
+
+function buildWeek(y, m, d) {
+  const row = document.createElement('div');
+  row.className = 'row week';
+  row.dataset.sunday = key(y, m, d);
+  row.innerHTML = `<div></div><div class="weeknote">KW ${isoWeek(new Date(y, m, d))}</div><div class="total"></div>`;
+  table.appendChild(row);
+}
+
+function buildRow(y, m, d) {
+  const k = key(y, m, d), dow = new Date(y, m, d).getDay();
+  const row = rows[k] || document.createElement('div');
+  const weekend = dow === 0 || dow === 6;
+  row.dataset.k = k;
+  row.className = 'row' + (weekend ? ' weekend' : '') + (k === TODAY ? ' today' : '');
+  const v = data[k];
+  let track, total = '<div class="total"></div>';
+  if (typeof v === 'string') {
+    track = `<div class="vp vacation"><span class="off">${v}</span></div>`;
+  } else {
+    let inner = '';
+    (v || []).forEach((s, i) => {
+      const running = s.e === null;
+      inner += `<div class="seg${running ? ' running' : ''}" data-i="${i}">
+        <span class="h l" data-side="l" tabindex="0" role="slider" aria-label="Beginn ändern">${chev('l')}</span>
+        <span class="lbl"></span>
+        ${running ? '<span class="live"></span>' : `<span class="h r" data-side="r" tabindex="0" role="slider" aria-label="Ende ändern">${chev('r')}</span>`}
+      </div>`;
+      if (i < v.length - 1) inner += `<button type="button" class="gap" data-i="${i}"><span class="x">${xIcon}</span></button>`;
+    });
+    track = `<div class="vp"><div class="track">${inner}</div></div>`;
+  }
+  if (!Array.isArray(v) && !weekend) {
+    const on = typeof v === 'string', label = on ? 'Urlaub entfernen' : 'Urlaub eintragen';
+    total = `<div class="total"><button type="button" class="vac${on ? ' on' : ''}" aria-pressed="${on}" aria-label="${label}" title="${label}">${vacIcon}</button></div>`;
+  }
+  row.innerHTML = `<div class="date"><span class="dow">${DOW[dow]}</span><span class="num">${d}.</span></div>` + track + total;
+  if (!rows[k]) { rows[k] = row; table.appendChild(row); }
+  layout(k);
+}
+
+function layout(k) {
+  const row = rows[k], v = data[k];
+  edges(k);
+  if (!Array.isArray(v)) return;
+  row.querySelectorAll('.seg').forEach(el => {
+    const s = v[+el.dataset.i], e = endOf(s);
+    el.style.left = pct(s.s) + '%';
+    el.style.width = (pct(e) - pct(s.s)) + '%';
+    el.classList.toggle('armed', e - s.s < ARM);
+    el.querySelector('.lbl').textContent = clock(s.s) + ' – ' + (s.e === null ? 'läuft' : clock(e));
+    el.querySelector('.h.l').setAttribute('aria-valuetext', clock(s.s));
+    const r = el.querySelector('.h.r'); if (r) r.setAttribute('aria-valuetext', clock(e));
+  });
+  row.querySelectorAll('.gap').forEach(el => {
+    const a = endOf(v[+el.dataset.i]), b = v[+el.dataset.i + 1].s;
+    el.style.left = pct(a) + '%';
+    el.style.width = (pct(b) - pct(a)) + '%';
+    el.setAttribute('aria-label', `Pause ${clock(a)} bis ${clock(b)} entfernen`);
+  });
+  const m = dayTotal(k), ea = effAlloc(k);
+  const chips = projects.filter(p => ea[p.id]).map(p => `<span><i style="background:var(${COLORS[p.color]})"></i>${dec(ea[p.id])}</span>`).join('');
+  const open = popKey === k;
+  row.querySelector('.total').innerHTML =
+    `<button type="button" class="sumbtn" aria-expanded="${open}" aria-label="Projektzeit am ${dayLabel(k)} aufteilen"><b>${dec(m)} h</b>${chips ? `<span class="alloc">${chips}</span>` : ''}</button>`;
+  if (open) renderPop();
+}
+
+function summary() {
+  const [a, b] = span();
+  let sum = 0, done = 0, doneDays = 0;
+  for (let d = a; d <= b; d++) {
+    const k = key(view.y, view.m, d), m = dayTotal(k);
+    sum += m;
+    // Der laufende Tag und geplante Tage zählen nicht in den Durchschnitt
+    if (m && k < TODAY) { done += m; doneDays++; }
+  }
+  document.getElementById('mt').textContent = dec(sum) + ' h';
+  const per = {};
+  for (let d = a; d <= b; d++) {
+    const ea = effAlloc(key(view.y, view.m, d));
+    for (const id in ea) per[id] = (per[id] || 0) + ea[id];
+  }
+  document.getElementById('split').innerHTML = projects.filter(p => per[p.id])
+    .map(p => `<span><i style="background:var(${COLORS[p.color]})"></i>${p.name} ${dec(per[p.id])} h</span>`).join('');
+  document.getElementById('sub').textContent = doneDays
+    ? `Ø ${dec(done / doneDays)} h pro Tag`
+    : 'Noch keine Zeit erfasst';
+  table.querySelectorAll('.row.week').forEach(row => {
+    const sun = new Date(row.dataset.sunday + 'T00:00');
+    let w = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sun); d.setDate(sun.getDate() - i);
+      w += dayTotal(key(d.getFullYear(), d.getMonth(), d.getDate()));
+    }
+    row.querySelector('.total').innerHTML = w ? `<small>Woche ${dec(w)} h</small>` : '';
+  });
+}
+
+const rowKey = el => el.closest('.row').dataset.k;
+const rebuild = k => { const [y, m, d] = k.split('-').map(Number); buildRow(y, m - 1, d); summary(); };
+const minuteAt = (ev, track) => { const r = track.getBoundingClientRect(); return START + ((ev.clientX - r.left) / r.width) * SPAN; };
+const dayLabel = k => { const [, m, d] = k.split('-').map(Number); return `${d}.${m}.`; };
+
+/* Rückgängig */
+const toast = document.getElementById('toast');
+let undo = null, toastTimer, lastMerge = 0;
+const copy = v => Array.isArray(v) ? v.map(s => ({ ...s })) : v;
+function remember(k, text, before = copy(data[k])) {
+  undo = { k, v: before };
+  document.getElementById('toastText').textContent = text;
+  toast.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 6000);
+}
+document.getElementById('undo').addEventListener('click', () => {
+  if (!undo) return;
+  if (undo.v === undefined) delete data[undo.k]; else data[undo.k] = undo.v;
+  rebuild(undo.k); undo = null; toast.hidden = true;
+});
+function removeSeg(k, i, before) {
+  const s = data[k][i];
+  remember(k, `Arbeitszeit am ${dayLabel(k)} gelöscht`, before);
+  data[k].splice(i, 1);
+  if (!data[k].length) delete data[k];
+  rebuild(k);
+}
+
+/* Griffe ziehen; ganz zusammengeschoben wird der Block beim Loslassen gelöscht */
+const bubble = document.getElementById('bubble');
+function bounds(v, i, side) {
+  const s = v[i];
+  if (side === 'l') return [i > 0 ? endOf(v[i - 1]) : START, endOf(s)];
+  return [s.s, i < v.length - 1 ? v[i + 1].s : END];
+}
+/* Bis an den Nachbarblock gezogen: beim Loslassen werden beide verbunden */
+function touching(v, i, side) {
+  if (side === 'l') return i > 0 && v[i].s <= endOf(v[i - 1]);
+  return i < v.length - 1 && endOf(v[i]) >= v[i + 1].s;
+}
+function join(k, i, side, before) {
+  const v = data[k], a = side === 'l' ? i - 1 : i;
+  remember(k, `Arbeitszeiten am ${dayLabel(k)} verbunden`, before);
+  v[a].e = v[a + 1].e;
+  v.splice(a + 1, 1);
+  rebuild(k);
+}
+function setEdge(k, i, side, m) {
+  const v = data[k], [lo, hi] = bounds(v, i, side);
+  m = Math.min(hi, Math.max(lo, m));
+  if (side === 'l') v[i].s = m; else v[i].e = m;
+  layout(k); summary();
+  return m;
+}
+
+table.addEventListener('pointerdown', ev => {
+  const h = ev.target.closest('.h'); if (!h) return;
+  ev.preventDefault();
+  const k = rowKey(h), i = +h.closest('.seg').dataset.i, side = h.dataset.side, track = h.closest('.track');
+  const before = copy(data[k]);
+  h.setPointerCapture(ev.pointerId);
+  const armed = () => endOf(data[k][i]) - data[k][i].s < ARM;
+  const move = e => {
+    const m = setEdge(k, i, side, Math.round(minuteAt(e, track) / SNAP) * SNAP);
+    const r = track.getBoundingClientRect();
+    bubble.hidden = false;
+    bubble.classList.toggle('danger', armed());
+    bubble.textContent = armed() ? 'Loslassen zum Löschen' : touching(data[k], i, side) ? 'Loslassen zum Verbinden' : clock(m);
+    bubble.style.left = (r.left + (pct(m) / 100) * r.width) + 'px';
+    bubble.style.top = (r.top - 8) + 'px';
+  };
+  const up = () => {
+    h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
+    bubble.hidden = true;
+    if (armed()) removeSeg(k, i, before);
+    else if (touching(data[k], i, side)) join(k, i, side, before);
+  };
+  h.addEventListener('pointermove', move);
+  h.addEventListener('pointerup', up);
+  h.addEventListener('pointercancel', up);
+  move(ev);
+});
+
+table.addEventListener('keydown', ev => {
+  const h = ev.target.closest('.h'); if (!h) return;
+  const k = rowKey(h), i = +h.closest('.seg').dataset.i, side = h.dataset.side, s = data[k][i];
+  if (ev.key === 'Backspace' || ev.key === 'Delete') { ev.preventDefault(); removeSeg(k, i); return; }
+  const step = { ArrowLeft: -SNAP, ArrowRight: SNAP, ArrowDown: -SNAP, ArrowUp: SNAP }[ev.key]; if (!step) return;
+  ev.preventDefault();
+  const m = (side === 'l' ? s.s : endOf(s)) + step * (ev.shiftKey ? 3 : 1);
+  if ((side === 'l' ? endOf(s) - m : m - s.s) < ARM) return;
+  const before = copy(data[k]);
+  setEdge(k, i, side, m);
+  if (touching(data[k], i, side)) join(k, i, side, before);
+});
+
+table.addEventListener('click', ev => {
+  /* Projektzeit aufteilen */
+  const sb = ev.target.closest('.sumbtn');
+  if (sb) { const k = rowKey(sb); popKey === k ? closePop() : openPop(k); return; }
+  /* Pause entfernen */
+  const g = ev.target.closest('.gap');
+  if (g) {
+    const k = rowKey(g), v = data[k], i = +g.dataset.i, a = v[i], b = v[i + 1];
+    remember(k, `Pause ${clock(endOf(a))} – ${clock(b.s)} am ${dayLabel(k)} entfernt`);
+    a.e = b.e; v.splice(i + 1, 1);
+    lastMerge = Date.now();
+    rebuild(k);
+    return;
+  }
+  /* Urlaub ein- und austragen */
+  const vac = ev.target.closest('.vac');
+  if (vac) {
+    const k = rowKey(vac);
+    if (typeof data[k] === 'string') delete data[k]; else data[k] = 'Urlaub';
+    rebuild(k);
+    rows[k].querySelector('.vac').focus();
+  }
+});
+
+table.addEventListener('dblclick', ev => {
+  if (Date.now() - lastMerge < 600) return;
+  const track = ev.target.closest('.track');
+  if (!track || track.classList.contains('vacation') || ev.target.closest('.h, .gap')) return;
+  const k = rowKey(track), at = minuteAt(ev, track);
+  const el = ev.target.closest('.seg');
+
+  /* Doppelklick in einen Block: 15 Minuten Pause einfügen */
+  if (el) {
+    const v = data[k], i = +el.dataset.i, s = v[i], e = endOf(s);
+    if (e - s.s < PAUSE + 2 * SNAP) return;
+    const p = Math.min(e - PAUSE - SNAP, Math.max(s.s + SNAP, Math.round((at - PAUSE / 2) / SNAP) * SNAP));
+    remember(k, `Pause ${clock(p)} – ${clock(p + PAUSE)} am ${dayLabel(k)} eingefügt`);
+    v.splice(i + 1, 0, { s: p + PAUSE, e: s.e });
+    s.e = p;
+    rebuild(k);
+    return;
+  }
+
+  /* Doppelklick auf freie Fläche: 30 Minuten Arbeitszeit einfügen */
+  const v = data[k] || [];
+  let lo = START, hi = END, idx = v.length;
+  for (let i = 0; i < v.length; i++) {
+    if (at < v[i].s) { hi = v[i].s - SNAP; idx = i; break; }
+    lo = endOf(v[i]) + SNAP;
+  }
+  if (hi - lo < ARM) return;
+  const len = Math.min(BLOCK, hi - lo);
+  const s = Math.min(hi - len, Math.max(lo, Math.round((at - len / 2) / SNAP) * SNAP));
+  remember(k, `Arbeitszeit ${clock(s)} – ${clock(s + len)} am ${dayLabel(k)} eingefügt`);
+  v.splice(idx, 0, { s, e: s + len });
+  data[k] = v;
+  rebuild(k);
+});
+
+/* Projektzeit: Popover an der Tagessumme */
+// Was angezeigt und gezählt wird, passt immer in die Tagessumme, auch wenn die Arbeitszeit später kürzer wird
+function effAlloc(k) {
+  let left = Math.floor(dayTotal(k) / QUARTER) * QUARTER;
+  const out = {};
+  for (const p of projects) {
+    const v = Math.min((alloc[k] || {})[p.id] || 0, left);
+    if (v > 0) { out[p.id] = v; left -= v; }
+  }
+  return out;
+}
+const pop = document.getElementById('pop');
+let popKey = null;
+function openPop(k) {
+  const prev = popKey;
+  popKey = k;
+  if (prev && rows[prev]) layout(prev);
+  layout(k);
+  pop.hidden = false;
+  renderPop();
+  pop.querySelector('button:not(:disabled)')?.focus();
+}
+function closePop() {
+  const prev = popKey;
+  popKey = null;
+  pop.hidden = true;
+  if (prev && rows[prev]) layout(prev);
+}
+function renderPop() {
+  const k = popKey, total = dayTotal(k), ea = effAlloc(k);
+  const used = Object.values(ea).reduce((a, v) => a + v, 0), left = total - used;
+  const [y, m, d] = k.split('-').map(Number);
+  const list = projects.filter(p => !p.hidden || ea[p.id]);
+  pop.innerHTML = `<h3><span>${DOW[new Date(y, m - 1, d).getDay()]} ${d}.${m}.</span><span>${dec(total)} h gesamt</span></h3>` +
+    list.map(p => {
+      const v = ea[p.id] || 0;
+      return `<div class="prow"><i class="pdot" style="background:var(${COLORS[p.color]})"></i><span class="pname-t">${p.name}</span>
+        <span class="step"><button type="button" data-p="${p.id}" data-d="-1" aria-label="${p.name} eine Viertelstunde weniger"${v ? '' : ' disabled'}>−</button>
+        <output class="${v ? '' : 'zero'}">${dec(v)} h</output>
+        <button type="button" data-p="${p.id}" data-d="1" aria-label="${p.name} eine Viertelstunde mehr"${left >= QUARTER ? '' : ' disabled'}>+</button></span></div>`;
+    }).join('') +
+    `<hr><div class="prow main"><i class="pdot" style="background:var(--y)"></i><span class="pname-t">${mainName}</span><span class="val">${dec(left)} h</span></div>` +
+    `<hr><button type="button" class="linkbtn" id="manage">Projekte verwalten…</button>`;
+  const btn = rows[k] && rows[k].querySelector('.sumbtn');
+  if (!btn) return;
+  const r = btn.getBoundingClientRect(), h = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.right - pop.offsetWidth, innerWidth - pop.offsetWidth - 8)) + 'px';
+  pop.style.top = (r.bottom + 6 + h > innerHeight - 8 ? Math.max(8, r.top - h - 6) : r.bottom + 6) + 'px';
+}
+pop.addEventListener('click', ev => {
+  if (ev.target.closest('#manage')) { openManager(); return; }
+  const b = ev.target.closest('[data-p]'); if (!b) return;
+  const k = popKey, id = b.dataset.p, cur = effAlloc(k)[id] || 0;
+  const day = alloc[k] || (alloc[k] = {});
+  day[id] = Math.max(0, cur + QUARTER * +b.dataset.d);
+  if (!day[id]) delete day[id];
+  if (!Object.keys(day).length) delete alloc[k];
+  layout(k); summary();
+  pop.querySelector(`[data-p="${id}"][data-d="${b.dataset.d}"]:not(:disabled)`)?.focus();
+});
+document.addEventListener('pointerdown', ev => {
+  if (popKey && !pop.contains(ev.target) && !ev.target.closest('.sumbtn')) closePop();
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key !== 'Escape') return;
+  if (!scrim.hidden) closeManager();
+  else if (popKey) { const k = popKey; closePop(); rows[k]?.querySelector('.sumbtn')?.focus(); }
+});
+
+/* Projekte verwalten */
+const scrim = document.getElementById('scrim'), plist = document.getElementById('plist');
+const gripIcon = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 2.5h8M1 5h8M1 7.5h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+const eyeIcon = on => on
+  ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>'
+  : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 13.5l11-11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+function renderManager() {
+  plist.innerHTML = `<li><span></span><i class="pdot" style="background:var(--y);width:12px;height:12px"></i>
+      <input class="pname" id="mainName" value="${esc(mainName)}" aria-label="Name des Hauptprojekts"><span class="rest">Restzeit</span></li>` +
+    projects.map(p => `<li draggable="true" data-id="${p.id}" class="${p.hidden ? 'off' : ''}">
+      <span class="grip" aria-hidden="true">${gripIcon}</span>
+      <button type="button" class="cdot" style="background:var(${COLORS[p.color]})" aria-label="Farbe von ${esc(p.name)} wechseln"></button>
+      <input class="pname" value="${esc(p.name)}" aria-label="Projektname">
+      <button type="button" class="eye" aria-pressed="${!p.hidden}" aria-label="${p.hidden ? 'Einblenden' : 'Ausblenden'}" title="${p.hidden ? 'Einblenden' : 'Ausblenden'}">${eyeIcon(!p.hidden)}</button>
+    </li>`).join('');
+}
+function openManager() {
+  closePop();
+  renderManager();
+  scrim.hidden = false;
+  document.getElementById('doneProjects').focus();
+}
+function closeManager() { scrim.hidden = true; render(); }
+const projectOf = el => projects.find(p => p.id === el.closest('li').dataset.id);
+plist.addEventListener('input', ev => {
+  if (ev.target.id === 'mainName') mainName = ev.target.value || 'Hauptprojekt';
+  else if (ev.target.classList.contains('pname')) projectOf(ev.target).name = ev.target.value || 'Ohne Namen';
+});
+plist.addEventListener('click', ev => {
+  const c = ev.target.closest('.cdot'), e = ev.target.closest('.eye');
+  if (c) { const p = projectOf(c); p.color = (p.color + 1) % COLORS.length; c.style.background = `var(${COLORS[p.color]})`; }
+  if (e) { const p = projectOf(e); p.hidden = !p.hidden; renderManager(); plist.querySelector(`[data-id="${p.id}"] .eye`).focus(); }
+});
+// Reihenfolge per Ziehen; Alt + Pfeiltaste im Namensfeld verschiebt ebenfalls
+let dragEl = null;
+plist.addEventListener('dragstart', ev => { dragEl = ev.target.closest('li'); dragEl.classList.add('dragging'); ev.dataTransfer.effectAllowed = 'move'; });
+plist.addEventListener('dragover', ev => {
+  const li = ev.target.closest('li[data-id]'); if (!dragEl || !li || li === dragEl) return;
+  ev.preventDefault();
+  const r = li.getBoundingClientRect();
+  li.parentNode.insertBefore(dragEl, ev.clientY < r.top + r.height / 2 ? li : li.nextSibling);
+});
+plist.addEventListener('dragend', () => {
+  dragEl.classList.remove('dragging'); dragEl = null;
+  const order = [...plist.querySelectorAll('li[data-id]')].map(li => li.dataset.id);
+  projects.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+});
+plist.addEventListener('keydown', ev => {
+  if (!ev.altKey || !['ArrowUp', 'ArrowDown'].includes(ev.key) || !ev.target.closest('li[data-id]')) return;
+  ev.preventDefault();
+  const i = projects.indexOf(projectOf(ev.target)), j = i + (ev.key === 'ArrowUp' ? -1 : 1);
+  if (j < 0 || j >= projects.length) return;
+  [projects[i], projects[j]] = [projects[j], projects[i]];
+  const id = projects[j].id;
+  renderManager();
+  plist.querySelector(`[data-id="${id}"] .pname`).focus();
+});
+document.getElementById('addProject').addEventListener('click', () => {
+  const used = projects.filter(p => !p.hidden).map(p => p.color);
+  const color = [0, 1, 2, 3].find(c => !used.includes(c)) ?? projects.length % COLORS.length;
+  const p = { id: 'p' + Date.now(), name: 'Neues Projekt', color, hidden: false };
+  projects.push(p);
+  renderManager();
+  const input = plist.querySelector(`[data-id="${p.id}"] .pname`);
+  input.focus(); input.select();
+});
+document.getElementById('doneProjects').addEventListener('click', closeManager);
+scrim.addEventListener('pointerdown', ev => { if (ev.target === scrim) closeManager(); });
+
+/* Abschnitte blättern */
+function step(dir) {
+  view.half += dir;
+  if (view.half > 2) { view.half = 1; view.m++; }
+  if (view.half < 1) { view.half = 2; view.m--; }
+  if (view.m > 11) { view.m = 0; view.y++; }
+  if (view.m < 0) { view.m = 11; view.y--; }
+  toast.hidden = true;
+  off = HOME;
+  render();
+}
+document.getElementById('prev').addEventListener('click', () => step(-1));
+document.getElementById('next').addEventListener('click', () => step(1));
+document.addEventListener('keydown', ev => {
+  if (ev.target.closest && ev.target.closest('.h')) return;
+  if (ev.key === 'ArrowLeft' && ev.metaKey) step(-1);
+  if (ev.key === 'ArrowRight' && ev.metaKey) step(1);
+});
+
+render();
+</script>

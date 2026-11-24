@@ -1,0 +1,446 @@
+import AppKit
+import ShiftCore
+import SwiftUI
+
+/// Die Übersicht: eine Monatshälfte, jeder Tag eine Zeile mit Zeitleiste und Summe.
+struct OverviewView: View {
+    let model: OverviewModel
+
+    @State private var period = HalfMonth.containing(.now)
+    @State private var offset = Double(TimeWindow.home)
+    @State private var undo: UndoEntry?
+    @State private var showsProjects = false
+    @State private var scrollMonitor: Any?
+    @State private var rowsFrame: CGRect = .zero
+    @State private var axisFrame: CGRect = .zero
+    @State private var trackWidth: CGFloat = 0
+
+    private let calendar = Calendar.current
+
+    static let dateWidth: CGFloat = 92
+    static let totalWidth: CGFloat = 82
+    static let spacing: CGFloat = 14
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            content(now: context.date)
+        }
+        .frame(width: 900)
+        .onAppear {
+            installScrollMonitor()
+            #if DEBUG
+            writeSnapshotIfRequested()
+            #endif
+        }
+        .onDisappear {
+            if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
+            scrollMonitor = nil
+        }
+        .sheet(isPresented: $showsProjects) {
+            ProjectManager(model: model)
+        }
+    }
+
+    private func content(now: Date) -> some View {
+        let days = period.days(calendar: calendar)
+        let totals = Dictionary(uniqueKeysWithValues: days.map { ($0, model.spans(on: $0, now: now).reduce(0) { $0 + $1.minutes }) })
+
+        return VStack(alignment: .leading, spacing: 0) {
+            header(days: days, totals: totals, now: now)
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                .padding(.bottom, 16)
+            Divider()
+            VStack(spacing: 0) {
+                axis
+                ForEach(days, id: \.self) { day in
+                    DayRow(model: model, day: day, now: now, offset: offset, onEdit: edit, onManageProjects: { showsProjects = true })
+                    if calendar.component(.weekday, from: day) == 1 {
+                        weekRow(sunday: day, now: now)
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 18)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { rowsFrame = $0 }
+        }
+        .overlay(alignment: .bottom) { undoNotice }
+    }
+
+    // MARK: Kopf
+
+    private func header(days: [Date], totals: [Date: Int], now: Date) -> some View {
+        let today = calendar.startOfDay(for: now)
+        let done = days.filter { $0 < today && totals[$0, default: 0] > 0 }
+        let average = done.isEmpty ? nil : done.reduce(0) { $0 + totals[$1, default: 0] } / done.count
+        let sum = totals.values.reduce(0, +)
+        var perProject: [(project: Project, minutes: Int)] = []
+        for day in days {
+            for entry in model.split(on: day, total: totals[day, default: 0]) {
+                if let i = perProject.firstIndex(where: { $0.project.id == entry.project.id }) {
+                    perProject[i].minutes += entry.minutes
+                } else {
+                    perProject.append(entry)
+                }
+            }
+        }
+        let range = period.dayNumbers(calendar: calendar)
+
+        return HStack(alignment: .center, spacing: 22) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(Formats.month.string(from: days[0]))
+                        .font(.system(size: 22, weight: .bold))
+                    Text("\(range.lowerBound).–\(range.upperBound).")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    HStack(spacing: 5) {
+                        ForEach(1...2, id: \.self) { half in
+                            Circle()
+                                .fill(half == period.half ? Color.primary : Color.track)
+                                .frame(width: 6, height: 6)
+                        }
+                    }
+                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 6 }
+                    .accessibilityHidden(true)
+                }
+                Text(average.map { "Ø \(HoursFormat.decimal($0)) h pro Tag" } ?? "Noch keine Zeit erfasst")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            Spacer()
+            HStack(spacing: 0) {
+                pageButton("chevron.left", label: "Vorheriger Abschnitt", key: .leftArrow) { page(period.previous) }
+                Divider().frame(height: 16)
+                pageButton("chevron.right", label: "Nächster Abschnitt", key: .rightArrow) { page(period.next) }
+            }
+            .background(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(HoursFormat.decimal(sum)) h")
+                    .font(.system(size: 28, weight: .semibold))
+                    .monospacedDigit()
+                if !perProject.isEmpty {
+                    HStack(spacing: 10) {
+                        ForEach(perProject, id: \.project.id) { entry in
+                            ProjectChip(color: .project(entry.project.colorIndex), text: "\(entry.project.name) \(HoursFormat.decimal(entry.minutes)) h")
+                        }
+                    }
+                    .font(.system(size: 12))
+                }
+            }
+        }
+    }
+
+    private func pageButton(_ symbol: String, label: String, key: KeyEquivalent, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 32, height: 26)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut(key, modifiers: .command)
+        .accessibilityLabel(label)
+    }
+
+    private func page(_ target: HalfMonth) {
+        period = target
+        offset = Double(TimeWindow.home)
+        undo = nil
+    }
+
+    // MARK: Uhrzeitleiste
+
+    private var axis: some View {
+        HStack(alignment: .bottom, spacing: Self.spacing) {
+            HStack {
+                Spacer()
+                panButton("chevron.left", label: "Frühere Uhrzeiten zeigen", delta: -60)
+                    .opacity(offset > 0 ? 1 : 0)
+            }
+            .frame(width: Self.dateWidth)
+
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                ZStack(alignment: .bottomLeading) {
+                    ForEach(0..<24, id: \.self) { hour in
+                        Text("\(hour)")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                            .fixedSize()
+                            .offset(x: CGFloat((Double(hour * 60) - offset) / Double(TimeWindow.length)) * width + 4)
+                    }
+                }
+                .frame(width: width, height: geometry.size.height, alignment: .bottomLeading)
+                .clipped()
+                .onAppear { trackWidth = width }
+                .onChange(of: width) { trackWidth = width }
+            }
+            .padding(.bottom, 9)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { axisFrame = $0 }
+
+            HStack(alignment: .bottom) {
+                panButton("chevron.right", label: "Spätere Uhrzeiten zeigen", delta: 60)
+                    .opacity(offset < TimeWindow.maxOffset ? 1 : 0)
+                Spacer()
+                Text("Summe").font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            .frame(width: Self.totalWidth)
+            .padding(.bottom, 9)
+        }
+        .frame(height: 30)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    private func panButton(_ symbol: String, label: String, delta: Double) -> some View {
+        Button {
+            offset = min(max((offset + delta) / 60, 0), TimeWindow.maxOffset / 60).rounded() * 60
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 16, height: 16)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+
+    /// Seitliches Wischen und Shift + Mausrad verschieben die Zeit überall in der Liste,
+    /// das normale Mausrad nur über der Uhrzeitleiste.
+    private func installScrollMonitor() {
+        scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+            guard let window = event.window, window.title == "Übersicht", let content = window.contentView, trackWidth > 0 else { return event }
+            let point = CGPoint(x: event.locationInWindow.x, y: content.bounds.height - event.locationInWindow.y)
+            guard rowsFrame.contains(point) else { return event }
+            let factor: CGFloat = event.hasPreciseScrollingDeltas ? 1 : 10
+            let dx = event.scrollingDeltaX * factor
+            let dy = event.scrollingDeltaY * factor
+            let delta: CGFloat
+            if abs(dx) > abs(dy) {
+                delta = dx
+            } else if event.modifierFlags.contains(.shift) || axisFrame.insetBy(dx: 0, dy: -4).contains(point) {
+                delta = dy
+            } else {
+                return event
+            }
+            offset = min(max(offset - Double(delta) * Double(TimeWindow.length) / Double(trackWidth), 0), TimeWindow.maxOffset)
+            return nil
+        }
+    }
+
+    #if DEBUG
+    /// Zum Prüfen ohne Bildschirmfoto: Mit `-snapshotOverview <Pfad>` gestartet,
+    /// speichert die App nur dieses Fenster als PNG.
+    private func writeSnapshotIfRequested() {
+        guard let path = UserDefaults.standard.string(forKey: "snapshotOverview") else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            guard let view = NSApp.windows.first(where: { $0.title == "Übersicht" })?.contentView,
+                  let image = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+            view.cacheDisplay(in: view.bounds, to: image)
+            try? image.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
+        }
+    }
+    #endif
+
+    // MARK: Wochen
+
+    private func weekRow(sunday: Date, now: Date) -> some View {
+        let week = (0..<7).map { calendar.date(byAdding: .day, value: -$0, to: sunday)! }
+        let minutes = week.reduce(0) { $0 + model.spans(on: $1, now: now).reduce(0) { $0 + $1.minutes } }
+        return HStack(spacing: Self.spacing) {
+            Color.clear.frame(width: Self.dateWidth)
+            Text("KW \(Calendar(identifier: .iso8601).component(.weekOfYear, from: sunday))")
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            Text(minutes > 0 ? "Woche \(HoursFormat.decimal(minutes)) h" : "")
+                .frame(width: Self.totalWidth, alignment: .trailing)
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(.secondary)
+        .monospacedDigit()
+        .frame(height: 26)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    // MARK: Rückgängig
+
+    private func edit(day: Date, before: [DaySpan], after: [DaySpan], message: String?) {
+        if let message {
+            undo = UndoEntry(message: "\(message) am \(Formats.dayMonth.string(from: day))", day: day, spans: before)
+        }
+        model.apply(after, on: day)
+    }
+
+    @ViewBuilder
+    private var undoNotice: some View {
+        if let undo {
+            HStack(spacing: 14) {
+                Text(undo.message)
+                Button("Rückgängig") {
+                    model.apply(undo.spans, on: undo.day)
+                    self.undo = nil
+                }
+                .buttonStyle(.plain)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.shiftYellow)
+                .keyboardShortcut("z", modifiers: .command)
+            }
+            .font(.system(size: 13))
+            .foregroundStyle(Color(nsColor: .windowBackgroundColor))
+            .padding(.leading, 16)
+            .padding(.trailing, 12)
+            .padding(.vertical, 9)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary))
+            .shadow(color: .black.opacity(0.2), radius: 12, y: 4)
+            .padding(.bottom, 20)
+            .transition(.opacity)
+            .task(id: undo.id) {
+                try? await Task.sleep(for: .seconds(6))
+                if self.undo?.id == undo.id { self.undo = nil }
+            }
+        }
+    }
+}
+
+private struct UndoEntry {
+    let id = UUID()
+    let message: String
+    let day: Date
+    let spans: [DaySpan]
+}
+
+// MARK: Tageszeile
+
+private struct DayRow: View {
+    let model: OverviewModel
+    let day: Date
+    let now: Date
+    let offset: Double
+    let onEdit: (_ day: Date, _ before: [DaySpan], _ after: [DaySpan], _ message: String?) -> Void
+    let onManageProjects: () -> Void
+
+    private let calendar = Calendar.current
+
+    var body: some View {
+        let spans = model.spans(on: day, now: now)
+        let isToday = calendar.isDate(day, inSameDayAs: now)
+        let isWeekend = calendar.isDateInWeekend(day)
+        let isVacation = model.isVacation(day)
+
+        HStack(spacing: OverviewView.spacing) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(Formats.weekdays[calendar.component(.weekday, from: day) - 1])
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20, alignment: .leading)
+                Text("\(calendar.component(.day, from: day)).")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(isWeekend ? .secondary : .primary)
+                if isToday {
+                    Text("Heute")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.black.opacity(0.85))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(Color.shiftYellow))
+                }
+            }
+            .monospacedDigit()
+            .fixedSize()
+            .frame(width: OverviewView.dateWidth, alignment: .leading)
+
+            if isVacation {
+                VacationTrack()
+            } else {
+                DayTrack(spans: spans, offset: offset) { after, message in
+                    onEdit(day, spans, after, message)
+                }
+                .opacity(isWeekend && spans.isEmpty ? 0.55 : 1)
+            }
+
+            ZStack(alignment: .trailing) {
+                Color.clear
+                if !spans.isEmpty {
+                    DayTotal(model: model, day: day, spans: spans, onManageProjects: onManageProjects)
+                } else if !isWeekend {
+                    VacationButton(isOn: isVacation) { model.toggleVacation(day) }
+                }
+            }
+            .frame(width: OverviewView.totalWidth, alignment: .trailing)
+        }
+        .frame(height: 44)
+        .background(isToday ? Color.todayFill.padding(.horizontal, -24) : nil)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+}
+
+private struct VacationTrack: View {
+    var body: some View {
+        ZStack {
+            Hatch(color: .shiftYellowFill, spacing: 12, lineWidth: 6)
+            Text("URLAUB")
+                .font(.system(size: 11))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+        }
+        .frame(height: 28)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(nsColor: .separatorColor)))
+    }
+}
+
+private struct VacationButton: View {
+    let isOn: Bool
+    let action: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            PalmShape()
+                .fill(isOn || hovered ? Color.primary : Color.secondary)
+                .frame(width: 16, height: 16)
+                .frame(width: 28, height: 26)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isOn ? Color.shiftYellowFill : hovered ? Color.hoverFill : .clear)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+        .accessibilityLabel(isOn ? "Urlaub entfernen" : "Urlaub eintragen")
+    }
+}
+
+struct ProjectChip: View {
+    let color: Color
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 7, height: 7)
+            Text(text)
+        }
+        .foregroundStyle(.secondary)
+        .monospacedDigit()
+        .lineLimit(1)
+    }
+}
+
+enum Formats {
+    static let month = formatter("LLLL yyyy")
+    static let weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
+    static let dayMonth = formatter("d.M.")
+    static func weekdayDayMonth(_ date: Date) -> String {
+        "\(weekdays[Calendar.current.component(.weekday, from: date) - 1]) \(dayMonth.string(from: date))"
+    }
+
+    private static func formatter(_ format: String) -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "de_DE")
+        formatter.dateFormat = format
+        return formatter
+    }
+}
