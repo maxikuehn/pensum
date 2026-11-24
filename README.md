@@ -13,7 +13,8 @@
   <a href="#was-pensum-macht">Funktionen</a> ·
   <a href="#installieren">Installieren</a> ·
   <a href="#deine-daten">Daten</a> ·
-  <a href="#entwickeln">Entwickeln</a>
+  <a href="#entwickeln">Entwickeln</a> ·
+  <a href="#lizenz">Lizenz</a>
 </p>
 
 <p align="center">
@@ -21,6 +22,7 @@
   <img src="https://img.shields.io/badge/Swift-6-F05138" alt="Swift 6">
   <img src="https://img.shields.io/badge/SwiftUI-SwiftData-0A84FF" alt="SwiftUI und SwiftData">
   <img src="https://img.shields.io/badge/Konto-keins-2ea44f" alt="Kein Konto nötig">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Lizenz-GPL--3.0-blue" alt="Lizenz GPL-3.0"></a>
 </p>
 
 <p align="center">
@@ -96,3 +98,7 @@ Debug-Builds kennen ein paar Startargumente zum Ausprobieren:
 | `-openOverview YES` | Öffnet die Übersicht direkt beim Start |
 | `-alwaysShowCheckIn YES` | Zeigt das Morgenfenster bei jedem Start |
 | `-snapshotOverview <Pfad>` | Speichert die Übersicht als PNG, mit `-snapshotDark YES` im dunklen Erscheinungsbild |
+
+## Lizenz
+
+Pensum ist freie Software unter der [GNU General Public License v3.0](LICENSE). Du darfst den Code nutzen, ändern und weitergeben. Wer eine veränderte Version weitergibt, muss deren Quellcode ebenfalls unter der GPL-3.0 offenlegen.
