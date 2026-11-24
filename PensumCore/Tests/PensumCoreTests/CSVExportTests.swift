@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ShiftCore
+@testable import PensumCore
 
 private let calendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)

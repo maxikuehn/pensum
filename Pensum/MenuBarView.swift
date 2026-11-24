@@ -1,4 +1,4 @@
-import ShiftCore
+import PensumCore
 import SwiftUI
 
 /// Das kleine Fenster unter dem Menübar-Symbol.
@@ -52,7 +52,7 @@ struct MenuBarView: View {
                         closeAndOpen { openSettings() }
                     }
                     .keyboardShortcut(",")
-                    MenuRow(title: "Shift beenden", shortcut: "⌘Q") {
+                    MenuRow(title: "Pensum beenden", shortcut: "⌘Q") {
                         NSApplication.shared.terminate(nil)
                     }
                     .keyboardShortcut("q")
@@ -103,7 +103,7 @@ private struct DayStrip: View {
                 Capsule().fill(.quaternary)
                 ForEach(spans, id: \.start) { span in
                     Capsule()
-                        .fill(Color.shiftYellow)
+                        .fill(Color.workYellow)
                         .frame(width: max(4, CGFloat(span.minutes) * scale))
                         .offset(x: CGFloat(span.start - lower) * scale)
                 }

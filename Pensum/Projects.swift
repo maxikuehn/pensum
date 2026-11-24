@@ -1,4 +1,4 @@
-import ShiftCore
+import PensumCore
 import SwiftData
 import SwiftUI
 
@@ -92,7 +92,7 @@ private struct SplitPopover: View {
 
             Divider().padding(.vertical, 6)
             HStack(spacing: 9) {
-                Circle().fill(Color.shiftYellow).frame(width: 8, height: 8)
+                Circle().fill(Color.workYellow).frame(width: 8, height: 8)
                 Text(model.mainProjectName).lineLimit(1)
                 Spacer()
                 Text("\(HoursFormat.decimal(total - used)) h").monospacedDigit().padding(.trailing, 4)
@@ -168,7 +168,7 @@ struct ProjectManager: View {
             List {
                 HStack(spacing: 10) {
                     Color.clear.frame(width: 12)
-                    Circle().fill(Color.shiftYellow).frame(width: 12, height: 12)
+                    Circle().fill(Color.workYellow).frame(width: 12, height: 12)
                     TextField("Hauptprojekt", text: $model.mainProjectName)
                         .textFieldStyle(.plain)
                     Text("Restzeit").font(.system(size: 12)).foregroundStyle(.secondary)

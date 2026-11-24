@@ -1,4 +1,4 @@
-import ShiftCore
+import PensumCore
 import SwiftUI
 
 /// Sichtbares Zeitfenster der Übersicht, wie in den Einstellungen festgelegt (standardmäßig 7–20 Uhr).
@@ -141,7 +141,7 @@ struct DayTrack: View {
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 18, height: 18)
-                    .background(Circle().fill(Color.shiftDanger))
+                    .background(Circle().fill(Color.dangerRed))
                     .fixedSize()
             }
         }
@@ -162,11 +162,11 @@ struct DayTrack: View {
     private func block(_ span: DaySpan, index: Int, in shown: [DaySpan], x: @escaping (Int) -> CGFloat, minute: @escaping (CGFloat) -> Double) -> some View {
         let width = max(0, x(span.end) - x(span.start))
         let armed = !creating && dragging?.index == index && span.minutes < DayEditing.deleteBelow
-        let color = armed ? Color.shiftDanger : .shiftYellow
+        let color = armed ? Color.dangerRed : .workYellow
 
         return ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(armed ? Color.dangerFill : .shiftYellowFill)
+                .fill(armed ? Color.dangerFill : .workYellowFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .strokeBorder(color, lineWidth: 3)
@@ -190,13 +190,13 @@ struct DayTrack: View {
                     .allowsHitTesting(false)
             }
 
-            handle(.start, index: index, color: armed ? .shiftDanger : .shiftYellow, minute: minute)
+            handle(.start, index: index, color: armed ? .dangerRed : .workYellow, minute: minute)
 
             if span.isRunning {
                 PulsingEdge(color: color)
                     .offset(x: width - 2)
             } else {
-                handle(.end, index: index, color: armed ? .shiftDanger : .shiftYellow, minute: minute)
+                handle(.end, index: index, color: armed ? .dangerRed : .workYellow, minute: minute)
                     .offset(x: width - Self.handleWidth)
             }
         }
@@ -206,7 +206,7 @@ struct DayTrack: View {
 
     private func handle(_ edge: SpanEdge, index: Int, color: Color, minute: @escaping (CGFloat) -> Double) -> some View {
         let isActive = dragging?.index == index && dragging?.edge == edge
-        let armed = color == .shiftDanger
+        let armed = color == .dangerRed
         return UnevenRoundedRectangle(
             topLeadingRadius: edge == .start ? 7 : 0,
             bottomLeadingRadius: edge == .start ? 7 : 0,
@@ -255,12 +255,12 @@ struct DayTrack: View {
     private func edgeHints(_ shown: [DaySpan]) -> some View {
         HStack(spacing: 0) {
             if shown.contains(where: { Double($0.start) < offset }) {
-                LinearGradient(colors: [.shiftYellow, .shiftYellow.opacity(0)], startPoint: .leading, endPoint: .trailing)
+                LinearGradient(colors: [.workYellow, .workYellow.opacity(0)], startPoint: .leading, endPoint: .trailing)
                     .frame(width: 10)
             }
             Spacer(minLength: 0)
             if shown.contains(where: { Double($0.end) > offset + Double(TimeWindow.length) }) {
-                LinearGradient(colors: [.shiftYellow.opacity(0), .shiftYellow], startPoint: .leading, endPoint: .trailing)
+                LinearGradient(colors: [.workYellow.opacity(0), .workYellow], startPoint: .leading, endPoint: .trailing)
                     .frame(width: 10)
             }
         }
@@ -295,7 +295,7 @@ extension DayTrack {
             .foregroundStyle(danger ? Color.white : Color(nsColor: .windowBackgroundColor))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: 6).fill(danger ? Color.shiftDanger : .primary))
+            .background(RoundedRectangle(cornerRadius: 6).fill(danger ? Color.dangerRed : .primary))
             .fixedSize()
             .position(x: position, y: -12)
             .allowsHitTesting(false)

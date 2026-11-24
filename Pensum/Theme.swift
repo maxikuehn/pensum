@@ -3,16 +3,16 @@ import SwiftUI
 
 extension Color {
     /// Das Gelb der Arbeitszeit, wie im Entwurf der Übersicht.
-    static let shiftYellow = Color(red: 0.965, green: 0.769, blue: 0.192)
-    static let shiftYellowFill = shiftYellow.opacity(0.26)
+    static let workYellow = Color(red: 0.965, green: 0.769, blue: 0.192)
+    static let workYellowFill = workYellow.opacity(0.26)
 
     static let track = dynamic(light: rgb(0xD6D6DC), dark: rgb(0x3B3B42))
     static let gridLine = dynamic(light: rgb(0xFFFFFF), dark: rgb(0x232327))
     static let hatch = dynamic(light: rgb(0x3C3C43, 0.28), dark: rgb(0xEBEBF5, 0.26))
-    static let shiftDanger = dynamic(light: rgb(0xE0342A), dark: rgb(0xFF6B61))
+    static let dangerRed = dynamic(light: rgb(0xE0342A), dark: rgb(0xFF6B61))
     static let dangerFill = dynamic(light: rgb(0xFF453A, 0.14), dark: rgb(0xFF453A, 0.22))
     static let hoverFill = dynamic(light: rgb(0x3C3C43, 0.08), dark: rgb(0xEBEBF5, 0.10))
-    static let todayFill = shiftYellow.opacity(0.10)
+    static let todayFill = workYellow.opacity(0.10)
 
     /// Farben der Nebenprojekte
     static let project: [Color] = [
@@ -52,8 +52,8 @@ struct PrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         let fill: AnyShapeStyle = switch kind {
-        case .start: AnyShapeStyle(Color.shiftYellow)
-        case .stop: AnyShapeStyle(Color.shiftDanger)
+        case .start: AnyShapeStyle(Color.workYellow)
+        case .stop: AnyShapeStyle(Color.dangerRed)
         case .neutral: AnyShapeStyle(.quaternary)
         }
         let text: Color = switch kind {

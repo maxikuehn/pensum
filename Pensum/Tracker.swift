@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 import OSLog
-import ShiftCore
+import PensumCore
 import SwiftData
 
 /// Startet und stoppt die Arbeitszeit, unterbricht sie bei automatisch erkannten Pausen
@@ -82,7 +82,7 @@ final class Tracker {
               let last = defaults.object(forKey: "lastActivity") as? Date,
               now.timeIntervalSince(last) > 5 * 60
         else { return }
-        Logger.shift.info("Block lief beim Beenden noch, Pause ab \(last)")
+        Logger.pensum.info("Block lief beim Beenden noch, Pause ab \(last)")
         beginAway(at: max(last, block.start))
     }
 
@@ -103,7 +103,7 @@ final class Tracker {
             stop(at: midnight)
             start(at: midnight)
         case .end(let end):
-            Logger.shift.info("Block vom \(block.start) war noch offen, endet um \(end)")
+            Logger.pensum.info("Block vom \(block.start) war noch offen, endet um \(end)")
             stop(at: end)
         }
     }
@@ -118,7 +118,7 @@ final class Tracker {
         do {
             return try context.fetch(descriptor).map(\.interval)
         } catch {
-            Logger.shift.error("Blöcke konnten nicht geladen werden: \(error)")
+            Logger.pensum.error("Blöcke konnten nicht geladen werden: \(error)")
             return []
         }
     }
@@ -154,11 +154,11 @@ final class Tracker {
         do {
             try context.save()
         } catch {
-            Logger.shift.error("Speichern fehlgeschlagen: \(error)")
+            Logger.pensum.error("Speichern fehlgeschlagen: \(error)")
         }
     }
 }
 
 extension Logger {
-    static let shift = Logger(subsystem: "de.maxikuehn.shift", category: "app")
+    static let pensum = Logger(subsystem: "de.maxikuehn.pensum", category: "app")
 }

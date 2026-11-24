@@ -1,5 +1,5 @@
 import AppKit
-import ShiftCore
+import PensumCore
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -387,7 +387,7 @@ struct OverviewView: View {
                 }
                 .buttonStyle(.plain)
                 .fontWeight(.semibold)
-                .foregroundStyle(Color.shiftYellow)
+                .foregroundStyle(Color.workYellow)
                 .keyboardShortcut("z", modifiers: .command)
             }
             .font(.system(size: 13))
@@ -451,7 +451,7 @@ private struct DayRow: View {
                         .foregroundStyle(.black.opacity(0.85))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(Color.shiftYellow))
+                        .background(RoundedRectangle(cornerRadius: 4).fill(Color.workYellow))
                 }
             }
             .monospacedDigit()
@@ -486,7 +486,7 @@ private struct DayRow: View {
 private struct VacationTrack: View {
     var body: some View {
         ZStack {
-            Hatch(color: .shiftYellowFill, spacing: 12, lineWidth: 6)
+            Hatch(color: .workYellowFill, spacing: 12, lineWidth: 6)
             Text("URLAUB")
                 .font(.system(size: 11))
                 .tracking(0.7)
@@ -511,7 +511,7 @@ private struct VacationButton: View {
                 .frame(width: 28, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(isOn ? Color.shiftYellowFill : hovered ? Color.hoverFill : .clear)
+                        .fill(isOn ? Color.workYellowFill : hovered ? Color.hoverFill : .clear)
                 )
                 .contentShape(Rectangle())
         }

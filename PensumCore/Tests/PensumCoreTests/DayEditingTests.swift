@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ShiftCore
+@testable import PensumCore
 
 private func m(_ time: String) -> Int {
     let parts = time.split(separator: ":").map { Int($0)! }

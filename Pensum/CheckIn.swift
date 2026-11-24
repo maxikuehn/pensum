@@ -1,6 +1,6 @@
 import AppKit
 import Observation
-import ShiftCore
+import PensumCore
 import SwiftUI
 
 /// Das kleine Fenster am Morgen: erscheint beim ersten Aufklappen eines Arbeitstags oben rechts,

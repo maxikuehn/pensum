@@ -3,13 +3,13 @@ import PackageDescription
 
 // Reine Rechenlogik ohne UI und ohne Datenbank, damit sie schnell per `swift test` prüfbar ist.
 let package = Package(
-    name: "ShiftCore",
+    name: "PensumCore",
     platforms: [.macOS(.v26)],
     products: [
-        .library(name: "ShiftCore", targets: ["ShiftCore"]),
+        .library(name: "PensumCore", targets: ["PensumCore"]),
     ],
     targets: [
-        .target(name: "ShiftCore"),
-        .testTarget(name: "ShiftCoreTests", dependencies: ["ShiftCore"]),
+        .target(name: "PensumCore"),
+        .testTarget(name: "PensumCoreTests", dependencies: ["PensumCore"]),
     ]
 )

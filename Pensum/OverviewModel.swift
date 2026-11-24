@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 import OSLog
-import ShiftCore
+import PensumCore
 import SwiftData
 
 /// Datenzugriff für die Übersicht: Blöcke, Urlaub und Projektzeiten je Tag.
@@ -117,7 +117,7 @@ final class OverviewModel {
         do {
             try context.save()
         } catch {
-            Logger.shift.error("Speichern fehlgeschlagen: \(error)")
+            Logger.pensum.error("Speichern fehlgeschlagen: \(error)")
         }
         revision += 1
     }

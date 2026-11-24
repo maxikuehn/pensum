@@ -82,7 +82,7 @@ struct SettingsView: View {
                             .font(.system(size: 12, weight: .medium))
                             .frame(width: 30, height: 24)
                             .foregroundStyle(isOn ? Color.black.opacity(0.85) : .secondary)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? Color.shiftYellow : Color.hoverFill))
+                            .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? Color.workYellow : Color.hoverFill))
                             .accessibilityAddTraits(isOn ? .isSelected : [])
                     }
                 }
@@ -107,7 +107,7 @@ struct SettingsView: View {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            Logger.shift.error("Autostart konnte nicht geändert werden: \(error)")
+            Logger.pensum.error("Autostart konnte nicht geändert werden: \(error)")
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
     }

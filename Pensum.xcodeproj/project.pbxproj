@@ -7,17 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000010 /* ShiftCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000011 /* ShiftCore */; };
+		A10000000000000000000010 /* PensumCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000011 /* PensumCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A10000000000000000000001 /* Shift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000001 /* Pensum.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pensum.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A10000000000000000000002 /* Shift */ = {
+		A10000000000000000000002 /* Pensum */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Shift;
+			path = Pensum;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -27,7 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10000000000000000000010 /* ShiftCore in Frameworks */,
+				A10000000000000000000010 /* PensumCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -37,7 +37,7 @@
 		A10000000000000000000004 = {
 			isa = PBXGroup;
 			children = (
-				A10000000000000000000002 /* Shift */,
+				A10000000000000000000002 /* Pensum */,
 				A10000000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -45,7 +45,7 @@
 		A10000000000000000000005 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A10000000000000000000001 /* Shift.app */,
+				A10000000000000000000001 /* Pensum.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -53,9 +53,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A10000000000000000000006 /* Shift */ = {
+		A10000000000000000000006 /* Pensum */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A10000000000000000000020 /* Build configuration list for PBXNativeTarget "Shift" */;
+			buildConfigurationList = A10000000000000000000020 /* Build configuration list for PBXNativeTarget "Pensum" */;
 			buildPhases = (
 				A10000000000000000000007 /* Sources */,
 				A10000000000000000000003 /* Frameworks */,
@@ -66,14 +66,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A10000000000000000000002 /* Shift */,
+				A10000000000000000000002 /* Pensum */,
 			);
-			name = Shift;
+			name = Pensum;
 			packageProductDependencies = (
-				A10000000000000000000011 /* ShiftCore */,
+				A10000000000000000000011 /* PensumCore */,
 			);
-			productName = Shift;
-			productReference = A10000000000000000000001 /* Shift.app */;
+			productName = Pensum;
+			productReference = A10000000000000000000001 /* Pensum.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -91,7 +91,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A10000000000000000000023 /* Build configuration list for PBXProject "Shift" */;
+			buildConfigurationList = A10000000000000000000023 /* Build configuration list for PBXProject "Pensum" */;
 			developmentRegion = de;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -101,14 +101,14 @@
 			mainGroup = A10000000000000000000004;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A10000000000000000000012 /* XCLocalSwiftPackageReference "ShiftCore" */,
+				A10000000000000000000012 /* XCLocalSwiftPackageReference "PensumCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A10000000000000000000005 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A10000000000000000000006 /* Shift */,
+				A10000000000000000000006 /* Pensum */,
 			);
 		};
 /* End PBXProject section */
@@ -145,7 +145,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Shift;
+				INFOPLIST_KEY_CFBundleDisplayName = Pensum;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -153,7 +153,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = de.maxikuehn.shift;
+				PRODUCT_BUNDLE_IDENTIFIER = de.maxikuehn.pensum;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -172,7 +172,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Shift;
+				INFOPLIST_KEY_CFBundleDisplayName = Pensum;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -180,7 +180,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = de.maxikuehn.shift;
+				PRODUCT_BUNDLE_IDENTIFIER = de.maxikuehn.pensum;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -234,7 +234,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A10000000000000000000020 /* Build configuration list for PBXNativeTarget "Shift" */ = {
+		A10000000000000000000020 /* Build configuration list for PBXNativeTarget "Pensum" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A10000000000000000000021 /* Debug */,
@@ -243,7 +243,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A10000000000000000000023 /* Build configuration list for PBXProject "Shift" */ = {
+		A10000000000000000000023 /* Build configuration list for PBXProject "Pensum" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A10000000000000000000024 /* Debug */,
@@ -255,16 +255,16 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A10000000000000000000012 /* XCLocalSwiftPackageReference "ShiftCore" */ = {
+		A10000000000000000000012 /* XCLocalSwiftPackageReference "PensumCore" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ShiftCore;
+			relativePath = PensumCore;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A10000000000000000000011 /* ShiftCore */ = {
+		A10000000000000000000011 /* PensumCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = ShiftCore;
+			productName = PensumCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

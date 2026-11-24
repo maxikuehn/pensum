@@ -1,4 +1,4 @@
-// Zeichnet das App-Symbol und legt alle Größen in Shift/Assets.xcassets/AppIcon.appiconset ab.
+// Zeichnet das App-Symbol und legt alle Größen in Pensum/Assets.xcassets/AppIcon.appiconset ab.
 // Aufruf aus dem Projektordner: swift scripts/make-icon.swift
 import AppKit
 
@@ -60,7 +60,7 @@ func draw(size: CGFloat) -> NSImage {
     }
 }
 
-let folder = URL(fileURLWithPath: "Shift/Assets.xcassets/AppIcon.appiconset", isDirectory: true)
+let folder = URL(fileURLWithPath: "Pensum/Assets.xcassets/AppIcon.appiconset", isDirectory: true)
 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 var images: [[String: String]] = []
 for base in [16, 32, 128, 256, 512] {
@@ -81,5 +81,5 @@ let contents: [String: Any] = ["images": images, "info": ["author": "xcode", "ve
 try JSONSerialization.data(withJSONObject: contents, options: [.prettyPrinted, .sortedKeys])
     .write(to: folder.appendingPathComponent("Contents.json"))
 try #"{"info":{"author":"xcode","version":1}}"#.data(using: .utf8)!
-    .write(to: URL(fileURLWithPath: "Shift/Assets.xcassets/Contents.json"))
+    .write(to: URL(fileURLWithPath: "Pensum/Assets.xcassets/Contents.json"))
 print("App-Symbol erzeugt")

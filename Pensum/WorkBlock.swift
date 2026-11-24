@@ -1,5 +1,5 @@
 import Foundation
-import ShiftCore
+import PensumCore
 import SwiftData
 
 /// Eine Arbeitsphase, sekundengenau gespeichert. Gerundet wird erst beim Anzeigen und Zählen.
