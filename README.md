@@ -6,7 +6,7 @@
 
 <p align="center">
   Arbeitszeit erfassen, ohne daran zu denken.<br>
-  Eine Mac-App für die Menüleiste: startet morgens, merkt Pausen, rechnet in Dezimalstunden.
+  Eine Mac-App für die Menüleiste: startet morgens, bemerkt Pausen, beendet wenn du Feierabend machst.
 </p>
 
 <p align="center">
@@ -21,7 +21,6 @@
   <img src="https://img.shields.io/badge/macOS-26%2B-black" alt="macOS 26 und neuer">
   <img src="https://img.shields.io/badge/Swift-6-F05138" alt="Swift 6">
   <img src="https://img.shields.io/badge/SwiftUI-SwiftData-0A84FF" alt="SwiftUI und SwiftData">
-  <img src="https://img.shields.io/badge/Konto-keins-2ea44f" alt="Kein Konto nötig">
   <a href="LICENSE"><img src="https://img.shields.io/badge/Lizenz-GPL--3.0-blue" alt="Lizenz GPL-3.0"></a>
 </p>
 
