@@ -25,10 +25,9 @@
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/overview-dark.png">
-    <img src="docs/readme/overview-light.png" width="100%" alt="Halbmonatsübersicht: pro Tag eine Zeitleiste mit gelben Arbeitsblöcken, schraffierten Pausen und der Summe in Dezimalstunden">
-  </picture>
+  <!-- #gh-…-mode-only statt <picture>: GitHub blendet diese Bilder per CSS nach dem eingestellten Theme ein, sofort beim Laden -->
+  <img src="docs/readme/overview-light.png#gh-light-mode-only" width="100%" alt="Halbmonatsübersicht: pro Tag eine Zeitleiste mit gelben Arbeitsblöcken, schraffierten Pausen und der Summe in Dezimalstunden">
+  <img src="docs/readme/overview-dark.png#gh-dark-mode-only" width="100%" alt="Halbmonatsübersicht: pro Tag eine Zeitleiste mit gelben Arbeitsblöcken, schraffierten Pausen und der Summe in Dezimalstunden">
 </p>
 
 Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des Tages fragt es einmal, ob die Arbeitszeit starten soll. Danach erkennt es Pausen von selbst: wenn du den Bildschirm sperrst, den Mac zuklappst oder eine Weile nichts tippst. Am Monatsende stehen alle Tage als Zeitleisten untereinander, und du korrigierst sie mit der Maus statt in Formularen.
@@ -39,10 +38,8 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
 - **Pausen von selbst.** Sperren, Zuklappen, Ruhezustand und Leerlauf (Standard: 15 Minuten ohne Eingabe) werden zu Pausen. Kommst du nach dem Zuklappen am Abend nicht zurück, endet der Tag dort.
 - **Der Status auf einen Blick.** Der Punkt am Symbol ist grün, wenn die Zeit läuft, orange in einer Pause und rot, wenn nichts läuft.
 
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/menubar-dark.png">
-    <img src="docs/readme/menubar-light.png" width="248" alt="Menüleisten-Symbol in drei Zuständen: roter, grüner und oranger Punkt">
-  </picture>
+  <img src="docs/readme/menubar-light.png#gh-light-mode-only" width="248" alt="Menüleisten-Symbol in drei Zuständen: roter, grüner und oranger Punkt">
+  <img src="docs/readme/menubar-dark.png#gh-dark-mode-only" width="248" alt="Menüleisten-Symbol in drei Zuständen: roter, grüner und oranger Punkt">
 
 - **Bearbeiten wie Videoschnitt.** Jeder Arbeitsblock hat Griffe an beiden Enden. Ziehen verschiebt Beginn und Ende, ein Klick auf eine Pause entfernt sie, ein Doppelklick fügt eine Pause oder einen neuen Block ein. Zieht man einen Block ganz zusammen, wird er gelöscht. Alles lässt sich mit ⌘Z zurücknehmen.
 - **Halbe Monate.** Die Übersicht zeigt den 1. bis 15. und den 16. bis Monatsende, mit Summe und Tagesdurchschnitt. Wochenenden sind eingeklappt, Urlaubstage tragen eine Palme.
