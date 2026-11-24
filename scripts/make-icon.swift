@@ -3,7 +3,6 @@
 import AppKit
 
 let yellow = NSColor(srgbRed: 0.965, green: 0.769, blue: 0.192, alpha: 1)
-let ink = NSColor(srgbRed: 0.11, green: 0.11, blue: 0.12, alpha: 1)
 
 func draw(size: CGFloat) -> NSImage {
     NSImage(size: NSSize(width: size, height: size), flipped: false) { _ in
@@ -14,47 +13,26 @@ func draw(size: CGFloat) -> NSImage {
         NSGradient(starting: NSColor(srgbRed: 0.20, green: 0.20, blue: 0.22, alpha: 1),
                    ending: NSColor(srgbRed: 0.10, green: 0.10, blue: 0.11, alpha: 1))!.draw(in: squircle, angle: -90)
 
-        // Rahmen mit Griffen wie in der Übersicht
-        let frame = NSRect(x: 232 * s, y: 392 * s, width: 560 * s, height: 240 * s)
-        let radius = 44 * s
-        let outer = NSBezierPath(roundedRect: frame, xRadius: radius, yRadius: radius)
-        yellow.withAlphaComponent(0.24).setFill()
-        outer.fill()
-
-        let handle = 92 * s
-        let border = 30 * s
-        yellow.setFill()
-        NSGraphicsContext.saveGraphicsState()
-        outer.addClip()
-        NSRect(x: frame.minX, y: frame.minY, width: handle, height: frame.height).fill()
-        NSRect(x: frame.maxX - handle, y: frame.minY, width: handle, height: frame.height).fill()
-        NSRect(x: frame.minX, y: frame.minY, width: frame.width, height: border).fill()
-        NSRect(x: frame.minX, y: frame.maxY - border, width: frame.width, height: border).fill()
-        NSGraphicsContext.restoreGraphicsState()
-
-        // Pfeile in den Griffen
-        func chevron(centerX: CGFloat, pointsLeft: Bool) {
-            let path = NSBezierPath()
-            let w = 20 * s, h = 40 * s, cy = frame.midY
-            let tip = pointsLeft ? centerX - w / 2 : centerX + w / 2
-            let back = pointsLeft ? centerX + w / 2 : centerX - w / 2
-            path.move(to: NSPoint(x: back, y: cy + h))
-            path.line(to: NSPoint(x: tip, y: cy))
-            path.line(to: NSPoint(x: back, y: cy - h))
-            path.lineWidth = 17 * s
-            path.lineCapStyle = .round
-            path.lineJoinStyle = .round
-            ink.setStroke()
-            path.stroke()
+        // Gleiche Form wie das Menüleisten-Symbol (dort 20 × 16 Punkte, oben nach unten),
+        // aber ohne Punkt und mit Stundenstrichen über die ganze Breite
+        let k: CGFloat = 31, ox: CGFloat = 233, oy: CGFloat = 264
+        func rect(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> NSRect {
+            NSRect(x: (ox + x * k) * s, y: (1024 - oy - (y + h) * k) * s, width: w * k * s, height: h * k * s)
         }
-        chevron(centerX: frame.minX + handle / 2, pointsLeft: true)
-        chevron(centerX: frame.maxX - handle / 2, pointsLeft: false)
+        let inner = rect(4.5, 3, 9, 5)
+        yellow.withAlphaComponent(0.24).setFill()
+        NSBezierPath(rect: inner).fill()
+        let frame = NSBezierPath(roundedRect: rect(1, 1.5, 16, 8), xRadius: 2 * k * s, yRadius: 2 * k * s)
+        frame.append(NSBezierPath(rect: inner))
+        frame.windingRule = .evenOdd
+        yellow.setFill()
+        frame.fill()
 
-        // Stundenstriche darunter
-        NSColor.white.withAlphaComponent(0.22).setFill()
-        for i in 0...6 {
-            let x = frame.minX + CGFloat(i) * frame.width / 6
-            NSRect(x: x - 4 * s, y: 300 * s, width: 8 * s, height: (i % 3 == 0 ? 44 : 26) * s).fill()
+        NSColor.white.withAlphaComponent(0.55).setFill()
+        for i in 0...4 {
+            let long = i % 2 == 0
+            let tick = rect(1.5 + CGFloat(i) * 3.45, long ? 11 : 12.2, 1.2, long ? 3.5 : 2.3)
+            NSBezierPath(roundedRect: tick, xRadius: 0.6 * k * s, yRadius: 0.6 * k * s).fill()
         }
         return true
     }
