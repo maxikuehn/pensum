@@ -92,6 +92,7 @@ cp -R build/Build/Products/Release/Pensum.app /Applications/
 | `Pensum/` | Die App: Menüleiste, Check-in, Übersicht, Einstellungen |
 | `PensumCore/` | Swift-Paket mit der Rechenlogik: Tagessummen, Rundung, Pausenregeln, Bearbeiten, Export |
 | `scripts/make-icon.swift` | Zeichnet das App-Symbol in allen Größen |
+| `scripts/make-dmg-background.swift` | Zeichnet den Hintergrund des DMG-Fensters nach `scripts/dmg/` |
 | `mockups/` | HTML-Entwürfe aus der Designphase |
 
 Die Logik in `PensumCore` ist frei von UI und hat eigene Tests:

@@ -53,7 +53,8 @@ jobs:
         run: |
           ditto -c -k --sequesterRsrc --keepParent build/Build/Products/Release/Pensum.app "Pensum-${{ steps.version.outputs.version }}.zip"
 
-      # Disk-Image mit der App links und dem Programme-Ordner rechts zum Hineinziehen.
+      # Disk-Image mit der App links und dem Programme-Ordner rechts zum Hineinziehen,
+      # Hintergrund aus scripts/make-dmg-background.swift.
       # Gelingt das Finder-Layout auf dem Runner nicht, entsteht es ohne Layout.
       - name: Disk-Image erstellen
         run: |
@@ -64,13 +65,14 @@ jobs:
           if ! create-dmg \
               --volname "Pensum" \
               --volicon "$app/Contents/Resources/AppIcon.icns" \
+              --background scripts/dmg/background.tiff \
               --window-pos 200 120 \
-              --window-size 540 340 \
+              --window-size 540 372 \
               --icon-size 128 \
               --text-size 13 \
-              --icon "Pensum.app" 140 150 \
+              --icon "Pensum.app" 140 140 \
               --hide-extension "Pensum.app" \
-              --app-drop-link 400 150 \
+              --app-drop-link 400 140 \
               "$dmg" dmg/; then
             echo "::warning::Finder-Layout nicht möglich, Disk-Image ohne Layout"
             rm -f "$dmg"
