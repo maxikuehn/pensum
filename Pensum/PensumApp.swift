@@ -25,6 +25,8 @@ struct PensumApp: App {
         monitor = ActivityMonitor(tracker: tracker) { checkIn.userBecameActive(at: $0) }
         _tracker = State(initialValue: tracker)
         _overview = State(initialValue: overview)
+        // Nach dem ersten Start aus dem Programme-Ordner: Disk-Image aufräumen
+        Task { @MainActor in await InstallerCleanup.offerIfNeeded() }
     }
 
     var body: some Scene {

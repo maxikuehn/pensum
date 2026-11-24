@@ -160,5 +160,5 @@ final class Tracker {
 }
 
 extension Logger {
-    static let pensum = Logger(subsystem: "de.maxikuehn.pensum", category: "app")
+    nonisolated static let pensum = Logger(subsystem: "de.maxikuehn.pensum", category: "app")
 }
