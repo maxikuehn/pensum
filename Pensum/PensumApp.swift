@@ -36,7 +36,7 @@ struct PensumApp: App {
         .menuBarExtraStyle(.window)
         .modelContainer(container)
 
-        Window("Übersicht", id: "overview") {
+        Window("Pensum", id: "overview") {
             OverviewView(model: overview)
         }
         .windowResizability(.contentSize)

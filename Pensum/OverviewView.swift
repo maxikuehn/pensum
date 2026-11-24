@@ -36,6 +36,9 @@ struct OverviewView: View {
         }
         .frame(width: 900)
         .onAppear {
+            // Solange die Übersicht offen ist, gilt Pensum als normale App: mit Dock-Symbol und im App-Umschalter (⌘⇥)
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate()
             installScrollMonitor()
             #if DEBUG
             writeSnapshotIfRequested()
@@ -44,6 +47,7 @@ struct OverviewView: View {
         .onDisappear {
             if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
             scrollMonitor = nil
+            NSApp.setActivationPolicy(.accessory)
         }
         .sheet(isPresented: $showsProjects) {
             ProjectManager(model: model)
@@ -321,7 +325,7 @@ struct OverviewView: View {
     /// das normale Mausrad nur über der Uhrzeitleiste.
     private func installScrollMonitor() {
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
-            guard let window = event.window, window.title == "Übersicht", let content = window.contentView, trackWidth > 0 else { return event }
+            guard let window = event.window, window.isOverview, let content = window.contentView, trackWidth > 0 else { return event }
             let point = CGPoint(x: event.locationInWindow.x, y: content.bounds.height - event.locationInWindow.y)
             guard rowsFrame.contains(point) else { return event }
             let factor: CGFloat = event.hasPreciseScrollingDeltas ? 1 : 10
@@ -348,7 +352,7 @@ struct OverviewView: View {
         guard let path = UserDefaults.standard.string(forKey: "snapshotOverview") else { return }
         if UserDefaults.standard.bool(forKey: "snapshotDark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            guard let view = NSApp.windows.first(where: { $0.title == "Übersicht" })?.contentView,
+            guard let view = NSApp.windows.first(where: { $0.isOverview })?.contentView,
                   let image = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * 2),
                                                pixelsHigh: Int(view.bounds.height * 2), bitsPerSample: 8,
                                                samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
@@ -602,4 +606,9 @@ enum Formats {
         formatter.dateFormat = format
         return formatter
     }
+}
+
+extension NSWindow {
+    /// Das Fenster der Übersicht, erkannt an der ID der Szene statt am Titel
+    var isOverview: Bool { identifier?.rawValue.hasPrefix("overview") == true }
 }
