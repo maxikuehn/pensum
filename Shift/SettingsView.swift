@@ -9,6 +9,7 @@ enum Preferences {
     static let workdaysKey = "workdays"
     static let dayStartKey = "dayStartHour"
     static let dayEndKey = "dayEndHour"
+    static let csvExportKey = "csvExportEnabled"
 
     /// Sichtbarer Zeitraum der Zeitleisten, standardmäßig 7–20 Uhr.
     static var dayStartHour: Int { UserDefaults.standard.object(forKey: dayStartKey) as? Int ?? 7 }
@@ -35,6 +36,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.workdaysKey) private var workdays = "23456"
     @AppStorage(Preferences.dayStartKey) private var dayStart = 7
     @AppStorage(Preferences.dayEndKey) private var dayEnd = 20
+    @AppStorage(Preferences.csvExportKey) private var csvExportEnabled = true
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     /// Montag zuerst, wie im Kalender
@@ -66,6 +68,8 @@ struct SettingsView: View {
             // Mindestens zwei Stunden, damit die Zeitleiste lesbar bleibt
             .onChange(of: dayStart) { _, start in if dayEnd < start + 2 { dayEnd = min(24, start + 2) } }
             .onChange(of: dayEnd) { _, end in if dayStart > end - 2 { dayStart = max(0, end - 2) } }
+
+            Toggle("CSV-Export in der Übersicht", isOn: $csvExportEnabled)
 
             Toggle("Morgens fragen, ob die Arbeitszeit starten soll", isOn: $checkInEnabled)
 

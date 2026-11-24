@@ -19,6 +19,7 @@ struct OverviewView: View {
     @State private var liveEdit: (day: Date, spans: [DaySpan])?
     @AppStorage(Preferences.dayStartKey) private var dayStart = 7
     @AppStorage(Preferences.dayEndKey) private var dayEnd = 20
+    @AppStorage(Preferences.csvExportKey) private var csvExportEnabled = true
 
     private let calendar = Calendar.current
 
@@ -120,22 +121,35 @@ struct OverviewView: View {
                     .monospacedDigit()
             }
             Spacer()
-            Button { export(days: days, now: now) } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 32, height: 26)
-                    .contentShape(Rectangle())
+            if csvExportEnabled {
+                Button { export(days: days, now: now) } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 12, weight: .semibold))
+                        .frame(width: 32, height: 26)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .background(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
+                .keyboardShortcut("e", modifiers: .command)
+                .accessibilityLabel("Als CSV exportieren")
             }
-            .buttonStyle(.plain)
-            .background(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
-            .keyboardShortcut("e", modifiers: .command)
-            .accessibilityLabel("Als CSV exportieren")
             HStack(spacing: 0) {
                 pageButton("chevron.left", label: "Vorheriger Abschnitt", key: .leftArrow) { page(period.previous) }
+                Divider().frame(height: 16)
+                Button { page(HalfMonth.containing(.now, calendar: calendar)) } label: {
+                    Text("Heute")
+                        .font(.system(size: 12, weight: .medium))
+                        .padding(.horizontal, 10)
+                        .frame(height: 26)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut("t", modifiers: .command)
                 Divider().frame(height: 16)
                 pageButton("chevron.right", label: "Nächster Abschnitt", key: .rightArrow) { page(period.next) }
             }
             .background(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
+            // Feste Breite, damit Export und Pfeile beim Blättern nicht springen
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(HoursFormat.decimal(sum)) h")
                     .font(.system(size: 28, weight: .semibold))
@@ -147,8 +161,10 @@ struct OverviewView: View {
                         }
                     }
                     .font(.system(size: 12))
+                    .fixedSize()
                 }
             }
+            .frame(width: 150, alignment: .trailing)
         }
     }
 
@@ -469,8 +485,9 @@ private struct PageDots: View {
             Capsule()
                 .fill(Color.primary)
                 .frame(width: 6, height: 6)
-                .offset(x: half == 1 ? 0 : 11)
-                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: half)
+                .animation(.spring(response: 0.35, dampingFraction: 0.7)) { dot in
+                    dot.offset(x: half == 1 ? 0 : 11)
+                }
         }
         .accessibilityHidden(true)
     }

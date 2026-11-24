@@ -216,8 +216,8 @@ struct DayTrack: View {
             let outcome = DayEditing.outcome(of: shown, index: dragging.index, edge: dragging.edge)
             let position = x(dragging.minute)
             let text = switch outcome {
-            case .delete: "Loslassen zum Löschen"
-            case .join: "Loslassen zum Verbinden"
+            case .delete: "Löschen"
+            case .join: "Verbinden"
             case .keep: clock(dragging.minute)
             }
             Text(text)
