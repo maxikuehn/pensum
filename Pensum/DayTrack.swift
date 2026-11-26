@@ -227,7 +227,11 @@ struct DayTrack: View {
         .gesture(
             DragGesture(minimumDistance: 0, coordinateSpace: .named("track"))
                 .onChanged { value in
-                    let target = DayEditing.snap(minute(value.location.x))
+                    // Um die gezogene Strecke verschieben, nicht an die Mausposition springen:
+                    // Ein Klick auf den Griff lässt die Kante, wo sie ist
+                    let original = edge == .start ? spans[index].start : spans[index].end
+                    let distance = minute(value.location.x) - minute(value.startLocation.x)
+                    let target = DayEditing.snap(Double(original) + distance)
                     let moved = DayEditing.moving(spans, index: index, edge: edge, to: target)
                     draft = moved
                     onDraft(moved)
