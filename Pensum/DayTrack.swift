@@ -57,7 +57,7 @@ struct DayTrack: View {
             .frame(width: width, height: Self.height, alignment: .topLeading)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .coordinateSpace(.named("track"))
-            .overlay { bubble(in: shown, x: x) }
+            .dragBubble(bubble(in: shown, x: x))
         }
         .frame(height: Self.height)
     }
@@ -272,37 +272,64 @@ struct DayTrack: View {
     }
 
     /// Uhrzeit bzw. Hinweis über dem gezogenen Griff.
-    @ViewBuilder
-    private func bubble(in shown: [DaySpan], x: (Int) -> CGFloat) -> some View {
+    private func bubble(in shown: [DaySpan], x: (Int) -> CGFloat) -> DragBubble? {
         if let pausing {
-            bubbleLabel("Pause \(clock(pausing.start)) – \(clock(pausing.end))", at: x(pausing.minute), danger: false)
-        } else if let dragging {
-            let outcome = creating ? .keep : DayEditing.outcome(of: shown, index: dragging.index, edge: dragging.edge)
-            let position = x(dragging.minute)
-            let text = switch outcome {
-            case .delete: "Löschen"
-            case .join: "Verbinden"
-            case .keep: creating
-                ? "\(clock(shown[dragging.index].start)) – \(clock(shown[dragging.index].end))"
-                : clock(dragging.minute)
-            }
-            bubbleLabel(text, at: position, danger: outcome == .delete)
+            return DragBubble(text: "Pause \(clock(pausing.start)) – \(clock(pausing.end))", danger: false, position: x(pausing.minute))
         }
+        guard let dragging else { return nil }
+        let outcome = creating ? .keep : DayEditing.outcome(of: shown, index: dragging.index, edge: dragging.edge)
+        let text = switch outcome {
+        case .delete: "Löschen"
+        case .join: "Verbinden"
+        case .keep: creating
+            ? "\(clock(shown[dragging.index].start)) – \(clock(shown[dragging.index].end))"
+            : clock(dragging.minute)
+        }
+        return DragBubble(text: text, danger: outcome == .delete, position: x(dragging.minute))
     }
 }
 
-extension DayTrack {
-    fileprivate func bubbleLabel(_ text: String, at position: CGFloat, danger: Bool) -> some View {
-        Text(text)
-            .font(.system(size: 12, weight: .semibold))
-            .monospacedDigit()
-            .foregroundStyle(danger ? Color.white : Color(nsColor: .windowBackgroundColor))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: 6).fill(danger ? Color.dangerRed : .primary))
-            .fixedSize()
-            .position(x: position, y: -12)
+/// Die Blase über dem gezogenen Griff. Die Übersicht zeichnet sie über allem,
+/// damit sie am oberen Rand der scrollbaren Liste nicht abgeschnitten wird.
+nonisolated struct DragBubble {
+    let text: String
+    let danger: Bool
+    let position: CGFloat
+    var anchor: Anchor<CGPoint>?
+}
+
+private nonisolated struct DragBubbleKey: PreferenceKey {
+    static var defaultValue: DragBubble? { nil }
+    static func reduce(value: inout DragBubble?, nextValue: () -> DragBubble?) {
+        value = value ?? nextValue()
+    }
+}
+
+extension View {
+    fileprivate func dragBubble(_ bubble: DragBubble?) -> some View {
+        anchorPreference(key: DragBubbleKey.self, value: .point(CGPoint(x: bubble?.position ?? 0, y: -12))) { anchor in
+            bubble.map { DragBubble(text: $0.text, danger: $0.danger, position: $0.position, anchor: anchor) }
+        }
+    }
+
+    /// Zeichnet die Blase eines gezogenen Griffs aus den Zeitleisten darin.
+    func dragBubbles() -> some View {
+        overlayPreferenceValue(DragBubbleKey.self) { bubble in
+            GeometryReader { proxy in
+                if let bubble, let anchor = bubble.anchor {
+                    Text(bubble.text)
+                        .font(.system(size: 12, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(bubble.danger ? Color.white : Color(nsColor: .windowBackgroundColor))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(bubble.danger ? Color.dangerRed : .primary))
+                        .fixedSize()
+                        .position(proxy[anchor])
+                }
+            }
             .allowsHitTesting(false)
+        }
     }
 }
 

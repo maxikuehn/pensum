@@ -1,4 +1,5 @@
 import OSLog
+import PensumCore
 import ServiceManagement
 import SwiftUI
 
@@ -10,6 +11,7 @@ enum Preferences {
     static let dayStartKey = "dayStartHour"
     static let dayEndKey = "dayEndHour"
     static let csvExportKey = "csvExportEnabled"
+    static let periodKey = "overviewPeriod"
 
     /// Sichtbarer Zeitraum der Zeitleisten, standardmäßig 7–20 Uhr.
     static var dayStartHour: Int { UserDefaults.standard.object(forKey: dayStartKey) as? Int ?? 7 }
@@ -18,6 +20,11 @@ enum Preferences {
     static var idleMinutes: Int {
         let value = UserDefaults.standard.integer(forKey: idleMinutesKey)
         return value > 0 ? value : 15
+    }
+
+    /// Abschnitt der Übersicht, standardmäßig eine Monatshälfte.
+    static var period: Period.Kind {
+        UserDefaults.standard.string(forKey: periodKey).flatMap(Period.Kind.init(rawValue:)) ?? .halfMonth
     }
 
     static var checkInEnabled: Bool {
@@ -37,6 +44,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.dayStartKey) private var dayStart = 7
     @AppStorage(Preferences.dayEndKey) private var dayEnd = 20
     @AppStorage(Preferences.csvExportKey) private var csvExportEnabled = true
+    @AppStorage(Preferences.periodKey) private var period = Period.Kind.halfMonth
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     /// Montag zuerst, wie im Kalender
@@ -68,6 +76,12 @@ struct SettingsView: View {
             // Mindestens zwei Stunden, damit die Zeitleiste lesbar bleibt
             .onChange(of: dayStart) { _, start in if dayEnd < start + 2 { dayEnd = min(24, start + 2) } }
             .onChange(of: dayEnd) { _, end in if dayStart > end - 2 { dayStart = max(0, end - 2) } }
+
+            Picker("Übersicht zeigt", selection: $period) {
+                Text("Ganzer Monat").tag(Period.Kind.month)
+                Text("15 Tage").tag(Period.Kind.halfMonth)
+                Text("Woche").tag(Period.Kind.week)
+            }
 
             Toggle("CSV-Export in der Übersicht", isOn: $csvExportEnabled)
 

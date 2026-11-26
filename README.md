@@ -44,7 +44,7 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
   <img src="docs/readme/menubar-dark.png#gh-dark-mode-only" width="248" alt="Menüleisten-Symbol in drei Zuständen: roter, grüner und oranger Punkt">
 
 - **Bearbeiten wie Videoschnitt.** Jeder Arbeitsblock hat Griffe an beiden Enden. Ziehen verschiebt Beginn und Ende, ein Klick auf eine Pause entfernt sie, ein Doppelklick fügt eine Pause oder einen neuen Block ein. Zieht man einen Block ganz zusammen, wird er gelöscht. Alles lässt sich mit ⌘Z zurücknehmen.
-- **Halbe Monate.** Die Übersicht zeigt den 1. bis 15. und den 16. bis Monatsende, mit Summe und Tagesdurchschnitt. Wochenenden sind eingeklappt, Urlaubstage tragen eine Palme.
+- **Monat, halber Monat oder Woche.** Die Übersicht zeigt standardmäßig den 1. bis 15. bzw. den 16. bis Monatsende, in den Einstellungen auch den ganzen Monat oder eine Kalenderwoche, jeweils mit Summe und Tagesdurchschnitt. Mit ← und → blätterst du weiter. Wochenenden sind eingeklappt, Urlaubstage tragen eine Palme.
 - **Dezimal und zu deinen Gunsten.** Zeiten erscheinen als `8,25 h`. Der Beginn wird auf 5 Minuten abgerundet, das Ende aufgerundet.
 - **Nebenprojekte.** Pro Tag lässt sich ein Teil der Zeit in Viertelstunden auf Projekte verteilen, etwa Pre-Sales oder interne Arbeit. Farbige Punkte zeigen, an welchen Tagen das so ist, ein Klick auf die Summe oben zeigt die Stunden je Projekt.
 - **CSV-Export.** Auf Wunsch exportiert Pensum den halben Monat als CSV mit Semikolon, die Excel und die meisten Zeiterfassungen direkt öffnen.

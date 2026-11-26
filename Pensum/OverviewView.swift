@@ -7,11 +7,13 @@ import UniformTypeIdentifiers
 struct OverviewView: View {
     let model: OverviewModel
 
-    @State private var period = HalfMonth.containing(.now)
+    @AppStorage(Preferences.periodKey) private var periodKind = Period.Kind.halfMonth
+    @State private var period = Period.containing(.now, kind: Preferences.period)
     @State private var offset = Double(TimeWindow.home)
     @State private var undo: UndoEntry?
     @State private var showsProjects = false
     @State private var scrollMonitor: Any?
+    @State private var keyMonitor: Any?
     @State private var rowsFrame: CGRect = .zero
     @State private var axisFrame: CGRect = .zero
     @State private var trackWidth: CGFloat = 0
@@ -29,28 +31,39 @@ struct OverviewView: View {
     static let dateWidth: CGFloat = 92
     static let totalWidth: CGFloat = 82
     static let spacing: CGFloat = 14
+    /// Schmaler passt der Kopf nicht mehr in eine Zeile.
+    static let minWidth: CGFloat = 720
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
             content(now: context.date)
         }
-        .frame(width: 900)
+        .frame(minWidth: Self.minWidth, maxWidth: .infinity, minHeight: 320, maxHeight: .infinity, alignment: .top)
         .onAppear {
             // Solange die Übersicht offen ist, gilt Pensum als normale App: mit Dock-Symbol und im App-Umschalter (⌘⇥)
             NSApp.setActivationPolicy(.regular)
             NSApp.activate()
             installScrollMonitor()
+            installKeyMonitor()
             #if DEBUG
             writeSnapshotIfRequested()
             #endif
         }
         .onDisappear {
             if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
+            if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
             scrollMonitor = nil
+            keyMonitor = nil
             NSApp.setActivationPolicy(.accessory)
         }
         .sheet(isPresented: $showsProjects) {
             ProjectManager(model: model)
+        }
+        // Andere Einteilung in den Einstellungen: den heutigen Tag zeigen, sofern er gerade zu sehen ist, sonst den Anfang des Abschnitts
+        .onChange(of: periodKind) { _, kind in
+            let days = period.days(calendar: calendar)
+            let anchor = days.contains { calendar.isDateInToday($0) } ? Date.now : days[0]
+            page(Period.containing(anchor, kind: kind, calendar: calendar))
         }
         .onChange(of: dayStart) { offset = Double(TimeWindow.home) }
         .onChange(of: dayEnd) { offset = Double(TimeWindow.home) }
@@ -73,31 +86,40 @@ struct OverviewView: View {
             Divider()
             VStack(spacing: 0) {
                 axis
-                ForEach(sections(of: days), id: \.self) { section in
-                    switch section {
-                    case .day(let day):
-                        dayRow(day, spans: stored[day, default: []], now: now)
-                    case .daysOff(let group):
-                        // Freie Tage mit Zeit, Urlaub oder heute bleiben immer sichtbar
-                        let pinned = group.contains { calendar.isDate($0, inSameDayAs: now) || model.isVacation($0) || !stored[$0, default: []].isEmpty }
-                        let isOpen = pinned || openDaysOff.contains(group[0])
-                        if !pinned {
-                            DaysOffToggle(days: group, isOpen: isOpen) {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    if isOpen { openDaysOff.remove(group[0]) } else { openDaysOff.insert(group[0]) }
+                    .padding(.horizontal, 24)
+                // Nur die Tage scrollen, Kopf und Uhrzeitleiste bleiben stehen
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(sections(of: days), id: \.self) { section in
+                            switch section {
+                            case .day(let day):
+                                dayRow(day, spans: stored[day, default: []], now: now)
+                            case .daysOff(let group):
+                                // Freie Tage mit Zeit, Urlaub oder heute bleiben immer sichtbar
+                                let pinned = group.contains { calendar.isDate($0, inSameDayAs: now) || model.isVacation($0) || !stored[$0, default: []].isEmpty }
+                                let isOpen = pinned || openDaysOff.contains(group[0])
+                                if !pinned {
+                                    DaysOffToggle(days: group, isOpen: isOpen) {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            if isOpen { openDaysOff.remove(group[0]) } else { openDaysOff.insert(group[0]) }
+                                        }
+                                    }
+                                }
+                                if isOpen {
+                                    ForEach(group, id: \.self) { dayRow($0, spans: stored[$0, default: []], now: now) }
                                 }
                             }
                         }
-                        if isOpen {
-                            ForEach(group, id: \.self) { dayRow($0, spans: stored[$0, default: []], now: now) }
-                        }
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 18)
                 }
+                .scrollIndicators(.never)
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 18)
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { rowsFrame = $0 }
         }
+        .dragBubbles()
         .overlay(alignment: .bottom) { undoNotice }
     }
 
@@ -156,17 +178,17 @@ struct OverviewView: View {
                 }
             }
         }
-        let range = period.dayNumbers(calendar: calendar)
-
         return HStack(alignment: .center, spacing: 22) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .center, spacing: 12) {
                     // So breit wie der längste mögliche Titel, damit die Punkte immer an derselben Stelle stehen
                     ZStack(alignment: .leading) {
                         title(month: "September 2026", range: "16.–31.").hidden()
-                        title(month: Formats.month.string(from: days[0]), range: "\(range.lowerBound).–\(range.upperBound).")
+                        title(period)
                     }
-                    PageDots(half: period.half)
+                    if let half = period.half {
+                        PageDots(half: half)
+                    }
                 }
                 Text(average.map { "Ø \(HoursFormat.decimal($0)) h pro Tag" } ?? "Noch keine Zeit erfasst")
                     .foregroundStyle(.secondary)
@@ -186,9 +208,9 @@ struct OverviewView: View {
                 .accessibilityLabel("Als CSV exportieren")
             }
             HStack(spacing: 0) {
-                pageButton("chevron.left", label: "Vorheriger Abschnitt", key: .leftArrow) { page(period.previous) }
+                pageButton("chevron.left", label: "Vorheriger Abschnitt") { page(period.previous) }
                 Divider().frame(height: 16)
-                Button { page(HalfMonth.containing(.now, calendar: calendar)) } label: {
+                Button { page(Period.containing(.now, kind: period.kind, calendar: calendar)) } label: {
                     Text("Heute")
                         .font(.system(size: 12, weight: .medium))
                         .padding(.horizontal, 10)
@@ -198,12 +220,31 @@ struct OverviewView: View {
                 .buttonStyle(.plain)
                 .keyboardShortcut("t", modifiers: .command)
                 Divider().frame(height: 16)
-                pageButton("chevron.right", label: "Nächster Abschnitt", key: .rightArrow) { page(period.next) }
+                pageButton("chevron.right", label: "Nächster Abschnitt") { page(period.next) }
             }
             .background(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
             // Feste Breite für bis zu „999,99 h“, damit Export und Pfeile beim Blättern nicht springen
             PeriodTotal(total: sum, perProject: perProject, mainProjectName: model.mainProjectName)
                 .frame(width: 128, alignment: .trailing)
+        }
+    }
+
+    /// Monatshälfte „November 2026 16.–30.“, ganzer Monat „November 2026“, Woche „KW 48 23.–29. November“.
+    @ViewBuilder
+    private func title(_ period: Period) -> some View {
+        let first = period.first(calendar: calendar)
+        let last = period.last(calendar: calendar)
+        switch period.kind {
+        case .month:
+            title(month: Formats.month.string(from: first), range: "")
+        case .halfMonth:
+            let days = period.dayNumbers ?? 1...15
+            title(month: Formats.month.string(from: first), range: "\(days.lowerBound).–\(days.upperBound).")
+        case .week:
+            let range = period.isWithinOneMonth
+                ? "\(Formats.day.string(from: first))–\(Formats.dayMonthName.string(from: last))"
+                : "\(Formats.dayShortMonth.string(from: first)) – \(Formats.dayShortMonth.string(from: last))"
+            title(month: "KW \(period.weekOfYear ?? 0)", range: range)
         }
     }
 
@@ -214,7 +255,7 @@ struct OverviewView: View {
         }
     }
 
-    private func pageButton(_ symbol: String, label: String, key: KeyEquivalent, action: @escaping () -> Void) -> some View {
+    private func pageButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 11, weight: .semibold))
@@ -222,11 +263,26 @@ struct OverviewView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .keyboardShortcut(key, modifiers: .command)
         .accessibilityLabel(label)
     }
 
-    /// Speichert die angezeigte Monatshälfte als CSV für Excel.
+    /// ← und → blättern, außer während in einem Textfeld geschrieben wird.
+    private func installKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard let window = event.window, window.isOverview, window.attachedSheet == nil,
+                  !(window.firstResponder is NSText),
+                  event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting([.numericPad, .function, .capsLock]).isEmpty
+            else { return event }
+            switch event.specialKey {
+            case .leftArrow?: page(period.previous)
+            case .rightArrow?: page(period.next)
+            default: return event
+            }
+            return nil
+        }
+    }
+
+    /// Speichert den angezeigten Abschnitt als CSV für Excel.
     private func export(days: [Date], now: Date) {
         var used = Set<String>()
         let exportDays = days.map { day in
@@ -243,10 +299,9 @@ struct OverviewView: View {
         let projects = model.projects.filter { !$0.isHidden || used.contains($0.key) }.map { (id: $0.key, name: $0.name) }
         let csv = CSVExport.make(days: exportDays, mainProject: model.mainProjectName, projects: projects)
 
-        let range = period.dayNumbers(calendar: calendar)
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.commaSeparatedText]
-        panel.nameFieldStringValue = String(format: "Arbeitszeit %d-%02d %d.-%d.csv", period.year, period.month, range.lowerBound, range.upperBound)
+        panel.nameFieldStringValue = "Arbeitszeit \(Formats.isoDay.string(from: period.first(calendar: calendar))) bis \(Formats.isoDay.string(from: period.last(calendar: calendar))).csv"
         NSApplication.shared.activate()
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
@@ -257,7 +312,7 @@ struct OverviewView: View {
         }
     }
 
-    private func page(_ target: HalfMonth) {
+    private func page(_ target: Period) {
         period = target
         offset = Double(TimeWindow.home)
         undo = nil
@@ -273,21 +328,26 @@ struct OverviewView: View {
                     .opacity(offset > 0 ? 1 : 0)
             }
             .frame(width: Self.dateWidth)
+            .padding(.bottom, 9)
 
             GeometryReader { geometry in
                 let width = geometry.size.width
+                // Mittig über den Stundenlinien der Zeitleisten, auch über den beiden Rändern
                 ZStack(alignment: .bottomLeading) {
-                    ForEach(0..<24, id: \.self) { hour in
-                        Text("\(hour)")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                            .fixedSize()
-                            .offset(x: CGFloat((Double(hour * 60) - offset) / Double(TimeWindow.length)) * width + 4)
+                    ForEach(0...24, id: \.self) { hour in
+                        let position = CGFloat((Double(hour * 60) - offset) / Double(TimeWindow.length)) * width
+                        if position > -0.5, position < width + 0.5 {
+                            Text("\(hour)")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                                .fixedSize()
+                                .frame(width: 0)
+                                .offset(x: position)
+                        }
                     }
                 }
                 .frame(width: width, height: geometry.size.height, alignment: .bottomLeading)
-                .clipped()
                 .onAppear { trackWidth = width }
                 .onChange(of: width) { trackWidth = width }
             }
@@ -444,14 +504,16 @@ private struct DayRow: View {
         let isVacation = model.isVacation(day)
 
         HStack(spacing: OverviewView.spacing) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(Formats.weekdays[calendar.component(.weekday, from: day) - 1])
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 20, alignment: .leading)
-                Text("\(calendar.component(.day, from: day)).")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(isWeekend ? .secondary : .primary)
+            HStack(spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(Formats.weekdays[calendar.component(.weekday, from: day) - 1])
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 20, alignment: .leading)
+                    Text("\(calendar.component(.day, from: day)).")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(isWeekend ? .secondary : .primary)
+                }
                 if isToday {
                     Text("Heute")
                         .font(.system(size: 10, weight: .semibold))
@@ -597,6 +659,10 @@ enum Formats {
     static let month = formatter("LLLL yyyy")
     static let weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
     static let dayMonth = formatter("d.M.")
+    static let day = formatter("d.")
+    static let dayMonthName = formatter("d. MMMM")
+    static let dayShortMonth = formatter("d. MMM")
+    static let isoDay = formatter("yyyy-MM-dd")
     static func weekdayDayMonth(_ date: Date) -> String {
         "\(weekdays[Calendar.current.component(.weekday, from: date) - 1]) \(dayMonth.string(from: date))"
     }
