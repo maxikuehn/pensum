@@ -82,6 +82,22 @@ jobs:
             hdiutil create -volname Pensum -srcfolder dmg -ov -format UDZO "$dmg"
           fi
 
+      # Notizen: die Commit-Titel seit dem letzten Release, ohne die reinen Versionssprünge
+      - name: Release-Notizen schreiben
+        if: steps.version.outputs.release == 'true'
+        run: |
+          previous=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          {
+            echo "## Änderungen"
+            echo
+            git log --no-merges --reverse --format='- %s' "${previous:+$previous..}HEAD" | grep -v -E '^- Version [0-9.]+$' || true
+            if [ -n "$previous" ]; then
+              echo
+              echo "**Alle Änderungen:** https://github.com/${{ github.repository }}/compare/$previous...v${{ steps.version.outputs.version }}"
+            fi
+          } > release-notes.md
+          cat release-notes.md
+
       - name: Release anlegen
         if: steps.version.outputs.release == 'true'
         env:
@@ -92,7 +108,7 @@ jobs:
             "Pensum-${{ steps.version.outputs.version }}.zip" \
             --title "Pensum ${{ steps.version.outputs.version }}" \
             --target "$GITHUB_SHA" \
-            --generate-notes
+            --notes-file release-notes.md
 
       - name: Build als Artefakt ablegen
         if: steps.version.outputs.release != 'true'
