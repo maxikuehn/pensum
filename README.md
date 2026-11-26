@@ -63,6 +63,14 @@ Pensum ist nicht bei Apple notarisiert. Beim ersten Öffnen meldet macOS deshalb
 xattr -dr com.apple.quarantine /Applications/Pensum.app
 ```
 
+### Per Terminal installieren und aktualisieren
+
+Ohne Warnung von macOS geht es über das Terminal. Der Befehl lädt die neueste Version, beendet ein laufendes Pensum, ersetzt die App im Programme-Ordner und startet sie neu. Deine Daten bleiben erhalten. Für jedes Update denselben Befehl noch einmal ausführen:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/maxikuehn/pensum/main/scripts/install.sh | bash
+```
+
 ### Selbst bauen
 
 Mit Xcode 26 oder neuer:
@@ -93,6 +101,7 @@ cp -R build/Build/Products/Release/Pensum.app /Applications/
 | `PensumCore/` | Swift-Paket mit der Rechenlogik: Tagessummen, Rundung, Pausenregeln, Bearbeiten, Export |
 | `scripts/make-icon.swift` | Zeichnet das App-Symbol in allen Größen |
 | `scripts/make-dmg-background.swift` | Zeichnet den Hintergrund des DMG-Fensters nach `scripts/dmg/` |
+| `scripts/install.sh` | Installiert oder aktualisiert Pensum aus dem neuesten Release |
 | `mockups/` | HTML-Entwürfe aus der Designphase |
 
 Die Logik in `PensumCore` ist frei von UI und hat eigene Tests:
