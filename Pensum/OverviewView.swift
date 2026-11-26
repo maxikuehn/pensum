@@ -16,6 +16,8 @@ struct OverviewView: View {
     @State private var keyMonitor: Any?
     @State private var rowsFrame: CGRect = .zero
     @State private var axisFrame: CGRect = .zero
+    /// Höhe aller Tage, damit Scrollbereich und Fenster nicht darüber hinaus wachsen
+    @State private var listHeight: CGFloat = 0
     @State private var trackWidth: CGFloat = 0
     /// Blöcke des Tages, an dem gerade ein Griff gezogen wird, damit die Summen sofort mitlaufen.
     @State private var liveEdit: (day: Date, spans: [DaySpan])?
@@ -38,7 +40,8 @@ struct OverviewView: View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
             content(now: context.date)
         }
-        .frame(minWidth: Self.minWidth, maxWidth: .infinity, minHeight: 320, maxHeight: .infinity, alignment: .top)
+        // Höher als alle Tage zusammen wird das Fenster nicht
+        .frame(minWidth: Self.minWidth, maxWidth: .infinity, minHeight: 320, alignment: .top)
         .onAppear {
             // Solange die Übersicht offen ist, gilt Pensum als normale App: mit Dock-Symbol und im App-Umschalter (⌘⇥)
             NSApp.setActivationPolicy(.regular)
@@ -113,7 +116,9 @@ struct OverviewView: View {
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 18)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
                 }
+                .frame(maxHeight: listHeight > 0 ? listHeight : nil)
                 .scrollIndicators(.never)
                 .scrollBounceBehavior(.basedOnSize)
             }

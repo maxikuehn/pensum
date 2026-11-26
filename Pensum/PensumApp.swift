@@ -43,7 +43,7 @@ struct PensumApp: App {
             OverviewView(model: overview)
         }
         .defaultSize(width: 900, height: 667)
-        .windowResizability(.contentMinSize)
+        .windowResizability(.contentSize)
         // Zum Ausprobieren: mit `-openOverview YES` starten, dann ist die Übersicht sofort offen
         .defaultLaunchBehavior(UserDefaults.standard.bool(forKey: "openOverview") ? .presented : .suppressed)
         .modelContainer(container)
