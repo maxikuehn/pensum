@@ -71,62 +71,68 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Toggle("Bei der Anmeldung starten", isOn: $launchAtLogin)
-                .onChange(of: launchAtLogin) { _, enabled in setLaunchAtLogin(enabled) }
-
-            Picker("Pause nach", selection: $idleMinutes) {
-                ForEach([5, 10, 15, 20, 30], id: \.self) { Text("\($0) Minuten ohne Eingabe").tag($0) }
-            }
-
-            LabeledContent("Sichtbarer Zeitraum") {
-                HStack(spacing: 6) {
-                    Picker("Von", selection: $dayStart) {
-                        ForEach(0..<23, id: \.self) { Text("\($0):00").tag($0) }
-                    }
-                    Text("bis")
-                    Picker("Bis", selection: $dayEnd) {
-                        ForEach(2...24, id: \.self) { Text("\($0):00").tag($0) }
+            Section("Arbeitszeit") {
+                LabeledContent("Arbeitstage") {
+                    HStack(spacing: 4) {
+                        ForEach(weekdays, id: \.number) { day in
+                            let isOn = workdays.contains(String(day.number))
+                            Button(day.name) { toggle(day.number) }
+                                .buttonStyle(.plain)
+                                .font(.system(size: 12, weight: .medium))
+                                .frame(width: 30, height: 24)
+                                .foregroundStyle(isOn ? Color.black.opacity(0.85) : .secondary)
+                                .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? Color.workYellow : Color.hoverFill))
+                                .accessibilityAddTraits(isOn ? .isSelected : [])
+                        }
                     }
                 }
-                .labelsHidden()
-                .fixedSize()
-                .monospacedDigit()
-            }
-            // Mindestens zwei Stunden, damit die Zeitleiste lesbar bleibt
-            .onChange(of: dayStart) { _, start in if dayEnd < start + 2 { dayEnd = min(24, start + 2) } }
-            .onChange(of: dayEnd) { _, end in if dayStart > end - 2 { dayStart = max(0, end - 2) } }
 
-            Picker("Übersicht zeigt", selection: $period) {
-                Text("Ganzer Monat").tag(Period.Kind.month)
-                Text("15 Tage").tag(Period.Kind.halfMonth)
-                Text("Woche").tag(Period.Kind.week)
-            }
-
-            Picker("Feiertage", selection: $holidayState) {
-                Text("Keine").tag("")
-                Divider()
-                ForEach(FederalState.allCases.sorted { $0.name < $1.name }, id: \.self) { Text($0.name).tag($0.rawValue) }
-            }
-
-            Toggle("CSV-Export in der Übersicht", isOn: $csvExportEnabled)
-
-            Toggle("Morgens fragen, ob die Arbeitszeit starten soll", isOn: $checkInEnabled)
-
-            Toggle("Nach Updates suchen", isOn: $updateCheckEnabled)
-
-            LabeledContent("Arbeitstage") {
-                HStack(spacing: 4) {
-                    ForEach(weekdays, id: \.number) { day in
-                        let isOn = workdays.contains(String(day.number))
-                        Button(day.name) { toggle(day.number) }
-                            .buttonStyle(.plain)
-                            .font(.system(size: 12, weight: .medium))
-                            .frame(width: 30, height: 24)
-                            .foregroundStyle(isOn ? Color.black.opacity(0.85) : .secondary)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? Color.workYellow : Color.hoverFill))
-                            .accessibilityAddTraits(isOn ? .isSelected : [])
-                    }
+                Picker("Feiertage", selection: $holidayState) {
+                    Text("Keine").tag("")
+                    Divider()
+                    ForEach(FederalState.allCases.sorted { $0.name < $1.name }, id: \.self) { Text($0.name).tag($0.rawValue) }
                 }
+
+                Toggle("Morgens fragen, ob die Arbeitszeit starten soll", isOn: $checkInEnabled)
+
+                Picker("Pause nach", selection: $idleMinutes) {
+                    ForEach([5, 10, 15, 20, 30], id: \.self) { Text("\($0) Minuten ohne Eingabe").tag($0) }
+                }
+            }
+
+            Section("Übersicht") {
+                Picker("Zeigt", selection: $period) {
+                    Text("Ganzer Monat").tag(Period.Kind.month)
+                    Text("15 Tage").tag(Period.Kind.halfMonth)
+                    Text("Woche").tag(Period.Kind.week)
+                }
+
+                LabeledContent("Sichtbarer Zeitraum") {
+                    HStack(spacing: 6) {
+                        Picker("Von", selection: $dayStart) {
+                            ForEach(0..<23, id: \.self) { Text("\($0):00").tag($0) }
+                        }
+                        Text("bis")
+                        Picker("Bis", selection: $dayEnd) {
+                            ForEach(2...24, id: \.self) { Text("\($0):00").tag($0) }
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    .monospacedDigit()
+                }
+                // Mindestens zwei Stunden, damit die Zeitleiste lesbar bleibt
+                .onChange(of: dayStart) { _, start in if dayEnd < start + 2 { dayEnd = min(24, start + 2) } }
+                .onChange(of: dayEnd) { _, end in if dayStart > end - 2 { dayStart = max(0, end - 2) } }
+
+                Toggle("CSV-Export", isOn: $csvExportEnabled)
+            }
+
+            Section("System") {
+                Toggle("Bei der Anmeldung starten", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, enabled in setLaunchAtLogin(enabled) }
+
+                Toggle("Nach Updates suchen", isOn: $updateCheckEnabled)
             }
         }
         .formStyle(.grouped)
