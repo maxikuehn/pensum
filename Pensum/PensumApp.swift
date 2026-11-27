@@ -39,7 +39,7 @@ struct PensumApp: App {
         .menuBarExtraStyle(.window)
         .modelContainer(container)
 
-        Window("Pensum", id: "overview") {
+        Window(Self.title, id: "overview") {
             OverviewView(model: overview)
         }
         .defaultSize(width: 900, height: 667)
@@ -52,6 +52,13 @@ struct PensumApp: App {
             SettingsView()
         }
     }
+
+    /// Im Entwicklungs-Build ist am Fenstertitel zu erkennen, welche App gerade läuft.
+    #if DEBUG
+    private static let title = "Pensum-Development"
+    #else
+    private static let title = "Pensum"
+    #endif
 
     /// Übernimmt Daten und Einstellungen aus der Zeit, als die App noch „Shift“ hieß. Läuft nur einmal.
     private static func migrateFromShift() {

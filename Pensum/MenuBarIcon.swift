@@ -33,6 +33,11 @@ enum MenuBarIcon {
             clip.addClip()
             NSColor.labelColor.setFill()
             shape.fill()
+            #if DEBUG
+            // Entwicklungs-Build: der Rahmen ist innen lila gefüllt
+            NSColor.systemPurple.setFill()
+            NSRect(x: 4.5, y: 3, width: 9, height: 5).fill()
+            #endif
             NSGraphicsContext.restoreGraphicsState()
 
             let color: NSColor = switch state {
