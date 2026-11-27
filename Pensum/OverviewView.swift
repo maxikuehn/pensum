@@ -30,8 +30,10 @@ struct OverviewView: View {
 
     private let calendar = Calendar.current
 
-    static let dateWidth: CGFloat = 92
-    static let totalWidth: CGFloat = 82
+    static let dateWidth: CGFloat = 64
+    static let totalWidth: CGFloat = 66
+    /// Rand links und rechts
+    static let inset: CGFloat = 20
     static let spacing: CGFloat = 14
     /// Schmaler passt der Kopf nicht mehr in eine Zeile.
     static let minWidth: CGFloat = 720
@@ -83,13 +85,13 @@ struct OverviewView: View {
 
         return VStack(alignment: .leading, spacing: 0) {
             header(days: days, totals: totals, now: now)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, Self.inset)
                 .padding(.top, 20)
                 .padding(.bottom, 16)
             Divider()
             VStack(spacing: 0) {
                 axis
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, Self.inset)
                 // Nur die Tage scrollen, Kopf und Uhrzeitleiste bleiben stehen
                 ScrollView {
                     VStack(spacing: 0) {
@@ -114,7 +116,7 @@ struct OverviewView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, Self.inset)
                     .padding(.bottom, 18)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
                 }
@@ -363,7 +365,6 @@ struct OverviewView: View {
                 panButton("chevron.right", label: "Spätere Uhrzeiten zeigen", delta: 60)
                     .opacity(offset < TimeWindow.maxOffset ? 1 : 0)
                 Spacer()
-                Text("Summe").font(.system(size: 11)).foregroundStyle(.secondary)
             }
             .frame(width: Self.totalWidth)
             .padding(.bottom, 9)
@@ -520,12 +521,10 @@ private struct DayRow: View {
                         .foregroundStyle(isWeekend ? .secondary : .primary)
                 }
                 if isToday {
-                    Text("Heute")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.black.opacity(0.85))
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(Color.workYellow))
+                    Circle()
+                        .fill(Color.workYellow)
+                        .frame(width: 7, height: 7)
+                        .accessibilityLabel("Heute")
                 }
             }
             .monospacedDigit()
@@ -552,7 +551,7 @@ private struct DayRow: View {
             .frame(width: OverviewView.totalWidth, alignment: .trailing)
         }
         .frame(height: 44)
-        .background(isToday ? Color.todayFill.padding(.horizontal, -24) : nil)
+        .background(isToday ? Color.todayFill.padding(.horizontal, -OverviewView.inset) : nil)
         .overlay(alignment: .bottom) { Divider() }
     }
 }
