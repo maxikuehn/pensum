@@ -27,3 +27,14 @@ private func date(_ day: Int) -> Date {
 
     """)
 }
+
+/// Im Export bleibt der Feiertag auch an gearbeiteten Tagen vermerkt, etwa für Zuschläge
+@Test func exportNamesHolidays() {
+    let days = [
+        ExportDay(date: date(18), spans: [], holiday: "Buß- und Bettag"),
+        ExportDay(date: date(19), spans: [DaySpan(start: 480, end: 720)], holiday: "Reformationstag"),
+    ]
+    let csv = CSVExport.make(days: days, mainProject: "Haupt", projects: [], calendar: calendar)
+    #expect(csv.contains("18.11.2026;;;;;;Buß- und Bettag\r\n"))
+    #expect(csv.contains("19.11.2026;8:00;12:00;0,00;4,00;4,00;Reformationstag\r\n"))
+}

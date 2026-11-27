@@ -19,7 +19,7 @@ struct PensumApp: App {
         let overview = OverviewModel(tracker: tracker, context: container.mainContext)
         let checkIn = CheckInController(
             tracker: tracker,
-            isVacation: { overview.isVacation($0) },
+            isVacation: { overview.isVacation($0) || Preferences.holiday(on: $0) != nil },
             markDayOff: { overview.setVacation($0, true) }
         )
         self.container = container

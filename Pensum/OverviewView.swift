@@ -25,6 +25,7 @@ struct OverviewView: View {
     @AppStorage(Preferences.dayEndKey) private var dayEnd = 20
     @AppStorage(Preferences.csvExportKey) private var csvExportEnabled = true
     @AppStorage(Preferences.workdaysKey) private var workdays = "23456"
+    @AppStorage(Preferences.holidayStateKey) private var holidayState = ""
     /// Aufgeklappte Gruppen freier Tage, erkannt am ersten Tag der Gruppe
     @State private var openDaysOff: Set<Date> = []
 
@@ -135,6 +136,7 @@ struct OverviewView: View {
             model: model,
             day: day,
             spans: spans,
+            holiday: FederalState(rawValue: holidayState).flatMap { Holidays.name(on: day, state: $0) },
             now: now,
             offset: offset,
             liveSpans: liveEdit?.day == day ? liveEdit?.spans : nil,
@@ -302,6 +304,7 @@ struct OverviewView: View {
                 date: day,
                 spans: spans,
                 isVacation: model.isVacation(day),
+                holiday: Preferences.holiday(on: day),
                 projects: Dictionary(uniqueKeysWithValues: split.map { ($0.project.key, $0.minutes) })
             )
         }
@@ -495,6 +498,8 @@ private struct DayRow: View {
     let model: OverviewModel
     let day: Date
     let spans: [DaySpan]
+    /// Gesetzlicher Feiertag im eingestellten Bundesland
+    let holiday: String?
     let now: Date
     let offset: Double
     /// Während des Ziehens: die Blöcke mit dem gezogenen Griff, für die Summe
@@ -536,13 +541,19 @@ private struct DayRow: View {
                     onEdit(day, spans, after, message)
                 }
                 .opacity(isWeekend && spans.isEmpty ? 0.55 : 1)
+                // Feiertag nur, solange an dem Tag keine Zeit erfasst ist; Klicks gehen durch, damit man trotzdem Zeit eintragen kann
+                .overlay {
+                    if (liveSpans ?? spans).isEmpty, let holiday {
+                        HolidayTrack(name: holiday).allowsHitTesting(false)
+                    }
+                }
             }
 
             ZStack(alignment: .trailing) {
                 Color.clear
                 if !(liveSpans ?? spans).isEmpty {
                     DayTotal(model: model, day: day, spans: liveSpans ?? spans, onManageProjects: onManageProjects)
-                } else if !isWeekend {
+                } else if !isWeekend, holiday == nil {
                     VacationButton(isOn: isVacation) { model.toggleVacation(day) }
                 }
             }
@@ -564,6 +575,25 @@ private struct VacationTrack: View {
         ZStack {
             Hatch(color: .workYellowFill, spacing: 12, lineWidth: 6)
             Text("URLAUB")
+                .font(.system(size: 11))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+        }
+        .frame(height: 28)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(nsColor: .separatorColor)))
+    }
+}
+
+/// Feiertag im eingestellten Bundesland: grau schraffiert mit dem Namen.
+private struct HolidayTrack: View {
+    let name: String
+
+    var body: some View {
+        ZStack {
+            Color(nsColor: .windowBackgroundColor)
+            Hatch(color: .track, spacing: 12, lineWidth: 6)
+            Text(name.uppercased())
                 .font(.system(size: 11))
                 .tracking(0.7)
                 .foregroundStyle(.secondary)

@@ -13,6 +13,7 @@ enum Preferences {
     static let csvExportKey = "csvExportEnabled"
     static let periodKey = "overviewPeriod"
     static let updateCheckKey = "updateCheckEnabled"
+    static let holidayStateKey = "holidayState"
 
     /// Sichtbarer Zeitraum der Zeitleisten, standardmäßig 7–20 Uhr.
     static var dayStartHour: Int { UserDefaults.standard.object(forKey: dayStartKey) as? Int ?? 7 }
@@ -26,6 +27,16 @@ enum Preferences {
     /// Abschnitt der Übersicht, standardmäßig eine Monatshälfte.
     static var period: Period.Kind {
         UserDefaults.standard.string(forKey: periodKey).flatMap(Period.Kind.init(rawValue:)) ?? .halfMonth
+    }
+
+    /// Bundesland für gesetzliche Feiertage, `nil` heißt: keine Feiertage zeigen.
+    static var holidayState: FederalState? {
+        FederalState(rawValue: UserDefaults.standard.string(forKey: holidayStateKey) ?? "")
+    }
+
+    /// Name des Feiertags an diesem Tag im eingestellten Bundesland.
+    static func holiday(on date: Date) -> String? {
+        holidayState.flatMap { Holidays.name(on: date, state: $0) }
     }
 
     /// Einmal am Tag bei GitHub nach einer neuen Version suchen, standardmäßig an.
@@ -52,6 +63,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.csvExportKey) private var csvExportEnabled = true
     @AppStorage(Preferences.periodKey) private var period = Period.Kind.halfMonth
     @AppStorage(Preferences.updateCheckKey) private var updateCheckEnabled = true
+    @AppStorage(Preferences.holidayStateKey) private var holidayState = ""
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     /// Montag zuerst, wie im Kalender
@@ -88,6 +100,12 @@ struct SettingsView: View {
                 Text("Ganzer Monat").tag(Period.Kind.month)
                 Text("15 Tage").tag(Period.Kind.halfMonth)
                 Text("Woche").tag(Period.Kind.week)
+            }
+
+            Picker("Feiertage", selection: $holidayState) {
+                Text("Keine").tag("")
+                Divider()
+                ForEach(FederalState.allCases.sorted { $0.name < $1.name }, id: \.self) { Text($0.name).tag($0.rawValue) }
             }
 
             Toggle("CSV-Export in der Übersicht", isOn: $csvExportEnabled)

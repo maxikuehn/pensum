@@ -36,7 +36,7 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
 
 ## Was Pensum macht
 
-- **Einmal fragen, dann still sein.** Morgens erscheint ein kleines Fenster mit *Start*, *Später* und *Heute frei*. Liegt das Aufklappen schon eine Weile zurück, kannst du auch ab diesem Zeitpunkt starten. An freien Tagen und im Urlaub fragt Pensum nicht.
+- **Einmal fragen, dann still sein.** Morgens erscheint ein kleines Fenster mit *Start*, *Später* und *Heute frei*. Liegt das Aufklappen schon eine Weile zurück, kannst du auch ab diesem Zeitpunkt starten. An freien Tagen, Feiertagen und im Urlaub fragt Pensum nicht.
 - **Pausen von selbst.** Sperren, Zuklappen, Ruhezustand und Leerlauf (Standard: 15 Minuten ohne Eingabe) werden zu Pausen. Kommst du nach dem Zuklappen am Abend nicht zurück, endet der Tag dort.
 - **Der Status auf einen Blick.** Der Punkt am Symbol ist grün, wenn die Zeit läuft, orange in einer Pause und rot, wenn nichts läuft.
 
@@ -45,6 +45,7 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
 
 - **Bearbeiten wie Videoschnitt.** Jeder Arbeitsblock hat Griffe an beiden Enden. Ziehen verschiebt Beginn und Ende, ein Klick auf eine Pause entfernt sie, ein Doppelklick fügt eine Pause oder einen neuen Block ein. Zieht man einen Block ganz zusammen, wird er gelöscht. Alles lässt sich mit ⌘Z zurücknehmen.
 - **Monat, halber Monat oder Woche.** Die Übersicht zeigt standardmäßig den 1. bis 15. bzw. den 16. bis Monatsende, in den Einstellungen auch den ganzen Monat oder eine Kalenderwoche, jeweils mit Summe und Tagesdurchschnitt. Mit ← und → blätterst du weiter. Wochenenden sind eingeklappt, Urlaubstage tragen eine Palme.
+- **Feiertage je Bundesland.** In den Einstellungen wählst du dein Bundesland, dann erscheinen dessen gesetzliche Feiertage in der Übersicht und im Export. Erfasst du an einem Feiertag doch Zeit, verschwindet die Markierung.
 - **Dezimal und zu deinen Gunsten.** Zeiten erscheinen als `8,25 h`. Der Beginn wird auf 5 Minuten abgerundet, das Ende aufgerundet.
 - **Nebenprojekte.** Pro Tag lässt sich ein Teil der Zeit in Viertelstunden auf Projekte verteilen, etwa Pre-Sales oder interne Arbeit. Farbige Punkte zeigen, an welchen Tagen das so ist, ein Klick auf die Summe oben zeigt die Stunden je Projekt.
 - **CSV-Export.** Auf Wunsch exportiert Pensum den halben Monat als CSV mit Semikolon, die Excel und die meisten Zeiterfassungen direkt öffnen.

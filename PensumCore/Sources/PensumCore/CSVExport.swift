@@ -5,13 +5,16 @@ public struct ExportDay: Sendable {
     public var date: Date
     public var spans: [DaySpan]
     public var isVacation: Bool
+    /// Name des gesetzlichen Feiertags, falls einer ist
+    public var holiday: String?
     /// Minuten je Nebenprojekt (Projekt-ID), bereits auf die Tagessumme begrenzt.
     public var projects: [String: Int]
 
-    public init(date: Date, spans: [DaySpan], isVacation: Bool = false, projects: [String: Int] = [:]) {
+    public init(date: Date, spans: [DaySpan], isVacation: Bool = false, holiday: String? = nil, projects: [String: Int] = [:]) {
         self.date = date
         self.spans = spans
         self.isVacation = isVacation
+        self.holiday = holiday
         self.projects = projects
     }
 }
@@ -33,7 +36,7 @@ public enum CSVExport {
             + projects.map { "\($0.name) (h)" } + ["Bemerkung"]).map(escape).joined(separator: ";")]
 
         var totals = Array(repeating: 0, count: 3 + projects.count)
-        for day in days where !day.spans.isEmpty || day.isVacation {
+        for day in days where !day.spans.isEmpty || day.isVacation || day.holiday != nil {
             let worked = day.spans.reduce(0) { $0 + $1.minutes }
             let pause = day.spans.isEmpty ? 0 : day.spans.last!.end - day.spans.first!.start - worked
             let perProject = projects.map { day.projects[$0.id] ?? 0 }
@@ -47,7 +50,7 @@ public enum CSVExport {
                 day.spans.last.map { clock($0.end) } ?? "",
             ]
             fields += day.spans.isEmpty ? values.map { _ in "" } : values.map(HoursFormat.decimal)
-            fields.append(day.isVacation ? "Urlaub" : "")
+            fields.append(day.isVacation ? "Urlaub" : day.holiday ?? "")
             lines.append(fields.map(escape).joined(separator: ";"))
         }
         lines.append((["Summe", "", ""] + totals.map(HoursFormat.decimal) + [""]).map(escape).joined(separator: ";"))
