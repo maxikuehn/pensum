@@ -8,7 +8,7 @@ struct OverviewView: View {
     let model: OverviewModel
 
     @AppStorage(Preferences.periodKey) private var periodKind = Period.Kind.halfMonth
-    @State private var period = Period.containing(.now, kind: Preferences.period)
+    @State private var period = Period.containing(Self.now(), kind: Preferences.period)
     @State private var offset = Double(TimeWindow.home)
     @State private var undo: UndoEntry?
     @State private var showsProjects = false
@@ -39,9 +39,18 @@ struct OverviewView: View {
     /// Schmaler passt der Kopf nicht mehr in eine Zeile.
     static let minWidth: CGFloat = 720
 
+    /// Jetzt, in Debug-Builds auf Wunsch ein fester Zeitpunkt aus `-demoNow`
+    private static func now(_ date: Date = .now) -> Date {
+        #if DEBUG
+        DemoData.now(replacing: date)
+        #else
+        date
+        #endif
+    }
+
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
-            content(now: context.date)
+            content(now: Self.now(context.date))
         }
         // Höher als alle Tage zusammen wird das Fenster nicht
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, minHeight: 320, alignment: .top)
@@ -68,7 +77,7 @@ struct OverviewView: View {
         // Andere Einteilung in den Einstellungen: den heutigen Tag zeigen, sofern er gerade zu sehen ist, sonst den Anfang des Abschnitts
         .onChange(of: periodKind) { _, kind in
             let days = period.days(calendar: calendar)
-            let anchor = days.contains { calendar.isDateInToday($0) } ? Date.now : days[0]
+            let anchor = days.contains { calendar.isDate($0, inSameDayAs: Self.now()) } ? Self.now() : days[0]
             page(Period.containing(anchor, kind: kind, calendar: calendar))
         }
         .onChange(of: dayStart) { offset = Double(TimeWindow.home) }
@@ -221,7 +230,7 @@ struct OverviewView: View {
             HStack(spacing: 0) {
                 pageButton("chevron.left", label: "Vorheriger Abschnitt") { page(period.previous) }
                 Divider().frame(height: 16)
-                Button { page(Period.containing(.now, kind: period.kind, calendar: calendar)) } label: {
+                Button { page(Period.containing(Self.now(), kind: period.kind, calendar: calendar)) } label: {
                     Text("Heute")
                         .font(.system(size: 12, weight: .medium))
                         .padding(.horizontal, 10)

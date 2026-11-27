@@ -17,6 +17,10 @@ final class ActivityMonitor {
     init(tracker: Tracker, onActive: @escaping (Date) -> Void) {
         self.tracker = tracker
         self.onActive = onActive
+        #if DEBUG
+        // Mit fester Demo-Zeit passt die echte Uhr nicht zu den Daten, Pausen würden laufende Blöcke zerschneiden
+        if UserDefaults.standard.string(forKey: "demoNow") != nil { return }
+        #endif
 
         let workspace = NSWorkspace.shared.notificationCenter
         observe(workspace, NSWorkspace.willSleepNotification) { $0.isAsleep = true; $0.away() }

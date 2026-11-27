@@ -28,8 +28,8 @@
 
 <p align="center">
   <!-- #gh-…-mode-only statt <picture>: GitHub blendet diese Bilder per CSS nach dem eingestellten Theme ein, sofort beim Laden -->
-  <img src="docs/readme/overview-light.png#gh-light-mode-only" width="100%" alt="Halbmonatsübersicht: pro Tag eine Zeitleiste mit gelben Arbeitsblöcken, schraffierten Pausen und der Summe in Dezimalstunden">
-  <img src="docs/readme/overview-dark.png#gh-dark-mode-only" width="100%" alt="Halbmonatsübersicht: pro Tag eine Zeitleiste mit gelben Arbeitsblöcken, schraffierten Pausen und der Summe in Dezimalstunden">
+  <img src="docs/readme/overview-light.png#gh-light-mode-only" width="100%" alt="Halbmonatsübersicht: pro Tag eine Zeitleiste mit gelben Arbeitsblöcken, schraffierten Pausen und der Summe in Dezimalstunden, dazu ein Urlaubstag, ein Feiertag und farbige Punkte für Nebenprojekte">
+  <img src="docs/readme/overview-dark.png#gh-dark-mode-only" width="100%" alt="Halbmonatsübersicht: pro Tag eine Zeitleiste mit gelben Arbeitsblöcken, schraffierten Pausen und der Summe in Dezimalstunden, dazu ein Urlaubstag, ein Feiertag und farbige Punkte für Nebenprojekte">
 </p>
 
 Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des Tages fragt es einmal, ob die Arbeitszeit starten soll. Danach erkennt es Pausen von selbst: wenn du den Bildschirm sperrst, den Mac zuklappst oder eine Weile nichts tippst. Am Monatsende stehen alle Tage als Zeitleisten untereinander, und du korrigierst sie mit der Maus statt in Formularen.
@@ -48,7 +48,7 @@ Pensum sitzt als kleines Symbol in der Menüleiste. Beim ersten Aufklappen des T
 - **Feiertage je Bundesland.** In den Einstellungen wählst du dein Bundesland, dann erscheinen dessen gesetzliche Feiertage in der Übersicht und im Export. Erfasst du an einem Feiertag doch Zeit, verschwindet die Markierung.
 - **Dezimal und zu deinen Gunsten.** Zeiten erscheinen als `8,25 h`. Der Beginn wird auf 5 Minuten abgerundet, das Ende aufgerundet.
 - **Nebenprojekte.** Pro Tag lässt sich ein Teil der Zeit in Viertelstunden auf Projekte verteilen, etwa Pre-Sales oder interne Arbeit. Farbige Punkte zeigen, an welchen Tagen das so ist, ein Klick auf die Summe oben zeigt die Stunden je Projekt.
-- **CSV-Export.** Auf Wunsch exportiert Pensum den halben Monat als CSV mit Semikolon, die Excel und die meisten Zeiterfassungen direkt öffnen.
+- **CSV-Export.** Auf Wunsch exportiert Pensum den angezeigten Zeitraum als CSV mit Semikolon, die Excel und die meisten Zeiterfassungen direkt öffnen.
 
 ## Installieren
 
@@ -113,23 +113,26 @@ Die Logik in `PensumCore` ist frei von UI und hat eigene Tests:
 cd PensumCore && swift test
 ```
 
-Debug-Builds kennen ein paar Startargumente zum Ausprobieren:
+Debug-Builds heißen im Fenstertitel *Pensum-Development* und haben in der Menüleiste einen lila gefüllten Rahmen. Sie kennen ein paar Startargumente zum Ausprobieren:
 
 | Argument | Wirkung |
 | --- | --- |
 | `-demoStore YES` | Eigene Datei `Demo.store` mit Beispieldaten, deine echten Zeiten bleiben unberührt |
 | `-openOverview YES` | Öffnet die Übersicht direkt beim Start |
+| `-demoNow "2026-12-29 12:40"` | Die Übersicht tut so, als wäre es dieser Zeitpunkt. Ein neuer `Demo.store` legt seine Beispieldaten dann auch dort an |
 | `-alwaysShowCheckIn YES` | Zeigt das Morgenfenster bei jedem Start |
 | `-snapshotOverview <Pfad>` | Speichert die Übersicht als PNG, mit `-snapshotDark YES` im dunklen Erscheinungsbild und `-snapshotScale <n>` in n-facher Auflösung |
+| `-updateCheck YES` | Sucht auch im Debug-Build nach Updates, mit `-installUpdate YES` wird ein gefundenes Update gleich installiert |
+| `-<Einstellung> <Wert>` | Überschreibt eine Einstellung für diesen Start, etwa `-holidayState BY` oder `-overviewPeriod week`. Solange das Argument gesetzt ist, lässt sie sich in den Einstellungen nicht ändern |
 
 ### Neue Version veröffentlichen
 
 Jeder Push auf `main` baut die App und testet `PensumCore` ([Workflow](.github/workflows/release.yml)). Ein Release entsteht nur, wenn die Version neu ist:
 
-1. In Xcode beim Target *Pensum* unter *General → Version* die Versionsnummer erhöhen, zum Beispiel von `0.2` auf `0.3`.
+1. In Xcode beim Target *Pensum* unter *General → Version* die Versionsnummer erhöhen, zum Beispiel von `0.4` auf `0.5`.
 2. Committen und auf `main` pushen.
 
-Gibt es den Tag `v0.3` noch nicht, legt der Workflow ihn an und veröffentlicht ein Release mit der fertigen App als Disk-Image und ZIP und den Änderungen seit dem letzten Release. Ohne neue Version hängt der Build nur als Artefakt am Workflow-Lauf. Die Build-Nummer zählt automatisch mit.
+Gibt es den Tag `v0.5` noch nicht, legt der Workflow ihn an und veröffentlicht ein Release mit der fertigen App als Disk-Image und ZIP und den Änderungen seit dem letzten Release. Ohne neue Version hängt der Build nur als Artefakt am Workflow-Lauf. Die Build-Nummer zählt automatisch mit.
 
 ## Lizenz
 
