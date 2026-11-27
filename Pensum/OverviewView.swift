@@ -185,7 +185,8 @@ struct OverviewView: View {
                 }
             }
         }
-        return HStack(alignment: .center, spacing: 22) {
+        // Knöpfe und Summe stehen mittig zur Titelzeile, der Durchschnitt hängt darunter
+        return HStack(alignment: .titleLine, spacing: 22) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .center, spacing: 12) {
                     // So breit wie der längste mögliche Titel, damit die Punkte immer an derselben Stelle stehen
@@ -197,6 +198,7 @@ struct OverviewView: View {
                         PageDots(half: half)
                     }
                 }
+                .alignmentGuide(.titleLine) { $0[VerticalAlignment.center] }
                 Text(average.map { "Ø \(HoursFormat.decimal($0)) h pro Tag" } ?? "Noch keine Zeit erfasst")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -631,6 +633,15 @@ private struct DaysOffToggle: View {
 }
 
 /// Zwei Punkte für die Monatshälfte; der dunkle gleitet beim Blättern hinüber.
+private extension VerticalAlignment {
+    /// Mitte der Titelzeile im Kopf der Übersicht
+    enum TitleLine: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat { context[VerticalAlignment.center] }
+    }
+
+    static let titleLine = VerticalAlignment(TitleLine.self)
+}
+
 private struct PageDots: View {
     let half: Int
     @State private var shown: Int
