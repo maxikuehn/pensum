@@ -65,11 +65,13 @@ xattr -dr com.apple.quarantine /Applications/Pensum.app
 
 ### Per Terminal installieren und aktualisieren
 
-Ohne Warnung von macOS geht es über das Terminal. Der Befehl lädt die neueste Version, beendet ein laufendes Pensum, ersetzt die App im Programme-Ordner und startet sie neu. Deine Daten bleiben erhalten. Für jedes Update denselben Befehl noch einmal ausführen:
+Ohne Warnung von macOS geht es über das Terminal. Der Befehl lädt die neueste Version, beendet ein laufendes Pensum, ersetzt die App im Programme-Ordner und startet sie neu. Deine Daten bleiben erhalten:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/maxikuehn/pensum/main/scripts/install.sh | bash
 ```
+
+Danach kümmert sich Pensum selbst um Updates: Gibt es eine neue Version, steht im Menüleisten-Fenster *Version … verfügbar*. Von dort geht es zu den Neuerungen oder direkt zur Installation, ebenfalls ohne Warnung.
 
 ### Selbst bauen
 
@@ -89,7 +91,7 @@ cp -R build/Build/Products/Release/Pensum.app /Applications/
 
 ## Deine Daten
 
-- **Nur auf deinem Mac.** Pensum braucht kein Konto und baut keine Netzwerkverbindung auf.
+- **Nur auf deinem Mac.** Pensum braucht kein Konto, und deine Zeiten verlassen den Mac nie. Die einzige Verbindung ins Netz ist die Frage bei GitHub nach einer neuen Version, beim Start und einmal am Tag. Sie lässt sich in den Einstellungen unter *Nach Updates suchen* abschalten.
 - **Ein Ort.** Alle Zeiten liegen in `~/Library/Application Support/Pensum/Pensum.store`. Zum Sichern genügt dieser Ordner.
 - **Kein Zugriff auf Bedienungshilfen.** Den Leerlauf liest Pensum über die Zeit seit der letzten Eingabe. Was du tippst, sieht es nicht.
 

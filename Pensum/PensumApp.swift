@@ -10,6 +10,7 @@ struct PensumApp: App {
     private let checkIn: CheckInController
     @State private var tracker: Tracker
     @State private var overview: OverviewModel
+    @State private var updater: Updater
 
     init() {
         Self.migrateFromShift()
@@ -23,16 +24,22 @@ struct PensumApp: App {
         )
         self.container = container
         self.checkIn = checkIn
-        monitor = ActivityMonitor(tracker: tracker) { checkIn.userBecameActive(at: $0) }
+        let updater = Updater()
+        monitor = ActivityMonitor(tracker: tracker) { date in
+            checkIn.userBecameActive(at: date)
+            updater.check(now: date, onlyIfNewDay: true)
+        }
+        _updater = State(initialValue: updater)
         _tracker = State(initialValue: tracker)
         _overview = State(initialValue: overview)
         // Nach dem ersten Start aus dem Programme-Ordner: Disk-Image aufräumen
         Task { @MainActor in await InstallerCleanup.offerIfNeeded() }
+        Task { @MainActor in updater.check(onlyIfNewDay: false) }
     }
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView(tracker: tracker)
+            MenuBarView(tracker: tracker, updater: updater)
         } label: {
             MenuBarLabel(state: tracker.isRunning ? .running : tracker.awaySince != nil ? .paused : .idle, appDelegate: appDelegate)
         }

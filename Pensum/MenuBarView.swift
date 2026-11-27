@@ -4,6 +4,7 @@ import SwiftUI
 /// Das kleine Fenster unter dem Menübar-Symbol.
 struct MenuBarView: View {
     let tracker: Tracker
+    let updater: Updater
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
     private let calculator = DayCalculator()
@@ -44,6 +45,7 @@ struct MenuBarView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 2) {
+                    UpdateRows(updater: updater)
                     MenuRow(title: "Übersicht", shortcut: "⌘O") {
                         closeAndOpen { openWindow(id: "overview") }
                     }
@@ -65,17 +67,60 @@ struct MenuBarView: View {
     }
 }
 
+/// Hinweis auf eine neue Version; aufgeklappt geht es zu den Neuerungen oder direkt zur Installation.
+private struct UpdateRows: View {
+    let updater: Updater
+    @State private var isOpen = false
+
+    var body: some View {
+        switch updater.state {
+        case .idle:
+            EmptyView()
+        case .available(let release), .failed(let release):
+            let failed = updater.state == .failed(release)
+            MenuRow(title: failed ? "Installation fehlgeschlagen" : "Version \(release.version) verfügbar", shortcut: "", marker: .workYellow) {
+                withAnimation(.easeInOut(duration: 0.15)) { isOpen.toggle() }
+            }
+            if isOpen || failed {
+                MenuRow(title: "Neuerungen ansehen", shortcut: "", indent: true) {
+                    NSApplication.shared.keyWindow?.close()
+                    NSWorkspace.shared.open(release.page)
+                }
+                MenuRow(title: failed ? "Erneut versuchen" : "Jetzt installieren", shortcut: "", indent: true) {
+                    updater.install(release)
+                }
+            }
+            Divider().padding(.vertical, 4).padding(.horizontal, 8)
+        case .installing(let release):
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Version \(release.version) wird installiert")
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            Divider().padding(.vertical, 4).padding(.horizontal, 8)
+        }
+    }
+}
+
 /// Eintrag wie in einem Menü, beim Darüberfahren hervorgehoben.
 private struct MenuRow: View {
     let title: String
     let shortcut: String
+    var marker: Color?
+    var indent = false
     let action: () -> Void
     @State private var hovered = false
 
     var body: some View {
         Button(action: action) {
-            HStack {
+            HStack(spacing: 8) {
+                if let marker {
+                    Circle().fill(marker).frame(width: 7, height: 7)
+                }
                 Text(title)
+                    .padding(.leading, indent ? 15 : 0)
                 Spacer()
                 Text(shortcut).foregroundStyle(hovered ? .secondary : .tertiary)
             }

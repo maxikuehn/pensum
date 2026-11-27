@@ -12,6 +12,7 @@ enum Preferences {
     static let dayEndKey = "dayEndHour"
     static let csvExportKey = "csvExportEnabled"
     static let periodKey = "overviewPeriod"
+    static let updateCheckKey = "updateCheckEnabled"
 
     /// Sichtbarer Zeitraum der Zeitleisten, standardmäßig 7–20 Uhr.
     static var dayStartHour: Int { UserDefaults.standard.object(forKey: dayStartKey) as? Int ?? 7 }
@@ -25,6 +26,11 @@ enum Preferences {
     /// Abschnitt der Übersicht, standardmäßig eine Monatshälfte.
     static var period: Period.Kind {
         UserDefaults.standard.string(forKey: periodKey).flatMap(Period.Kind.init(rawValue:)) ?? .halfMonth
+    }
+
+    /// Einmal am Tag bei GitHub nach einer neuen Version suchen, standardmäßig an.
+    static var updateCheckEnabled: Bool {
+        UserDefaults.standard.object(forKey: updateCheckKey) as? Bool ?? true
     }
 
     static var checkInEnabled: Bool {
@@ -45,6 +51,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.dayEndKey) private var dayEnd = 20
     @AppStorage(Preferences.csvExportKey) private var csvExportEnabled = true
     @AppStorage(Preferences.periodKey) private var period = Period.Kind.halfMonth
+    @AppStorage(Preferences.updateCheckKey) private var updateCheckEnabled = true
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     /// Montag zuerst, wie im Kalender
@@ -86,6 +93,8 @@ struct SettingsView: View {
             Toggle("CSV-Export in der Übersicht", isOn: $csvExportEnabled)
 
             Toggle("Morgens fragen, ob die Arbeitszeit starten soll", isOn: $checkInEnabled)
+
+            Toggle("Nach Updates suchen", isOn: $updateCheckEnabled)
 
             LabeledContent("Arbeitstage") {
                 HStack(spacing: 4) {
