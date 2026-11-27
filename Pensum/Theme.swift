@@ -13,6 +13,8 @@ extension Color {
     static let dangerFill = dynamic(light: rgb(0xFF453A, 0.14), dark: rgb(0xFF453A, 0.22))
     static let hoverFill = dynamic(light: rgb(0x3C3C43, 0.08), dark: rgb(0xEBEBF5, 0.10))
     static let todayFill = workYellow.opacity(0.10)
+    /// Schrift für den heutigen Tag: Gelb ist auf Hell zu blass, dort ein dunkleres Bernstein
+    static let todayText = dynamic(light: rgb(0xB27600), dark: rgb(0xF6C431))
 
     /// Farben der Nebenprojekte
     static let project: [Color] = [

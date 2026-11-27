@@ -512,21 +512,17 @@ private struct DayRow: View {
         HStack(spacing: OverviewView.spacing) {
             HStack(spacing: 6) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    // Heute in Bernstein und fett, dazu der Strich am linken Rand
                     Text(Formats.weekdays[calendar.component(.weekday, from: day) - 1])
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, weight: isToday ? .semibold : .regular))
+                        .foregroundStyle(isToday ? AnyShapeStyle(Color.todayText) : AnyShapeStyle(.secondary))
                         .frame(width: 20, alignment: .leading)
                     Text("\(calendar.component(.day, from: day)).")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isWeekend ? .secondary : .primary)
-                }
-                if isToday {
-                    Circle()
-                        .fill(Color.workYellow)
-                        .frame(width: 7, height: 7)
-                        .accessibilityLabel("Heute")
+                        .font(.system(size: 14, weight: isToday ? .bold : .semibold))
+                        .foregroundStyle(isToday ? AnyShapeStyle(Color.todayText) : isWeekend ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 }
             }
+            .accessibilityLabel(isToday ? "Heute" : "")
             .monospacedDigit()
             .fixedSize()
             .frame(width: OverviewView.dateWidth, alignment: .leading)
@@ -552,6 +548,11 @@ private struct DayRow: View {
         }
         .frame(height: 44)
         .background(isToday ? Color.todayFill.padding(.horizontal, -OverviewView.inset) : nil)
+        .overlay(alignment: .leading) {
+            if isToday {
+                Capsule().fill(Color.workYellow).frame(width: 3, height: 26).offset(x: -OverviewView.inset + 6)
+            }
+        }
         .overlay(alignment: .bottom) { Divider() }
     }
 }
