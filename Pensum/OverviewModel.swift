@@ -106,6 +106,31 @@ final class OverviewModel {
         return project
     }
 
+    /// An wie vielen Tagen ein Projekt Zeit hat, wie viel insgesamt und wann zuletzt, so wie es in die Tagessummen passt.
+    func usage(of project: Project, now: Date = .now) -> (days: Int, minutes: Int, last: Date?) {
+        _ = revision
+        let infos = (try? context.fetch(FetchDescriptor<DayInfo>())) ?? []
+        var result: (days: Int, minutes: Int, last: Date?) = (0, 0, nil)
+        for info in infos where (info.allocations[project.key] ?? 0) > 0 {
+            let total = spans(on: info.day, now: now).reduce(0) { $0 + $1.minutes }
+            guard let minutes = split(on: info.day, total: total).first(where: { $0.project.id == project.id })?.minutes, minutes > 0 else { continue }
+            result.days += 1
+            result.minutes += minutes
+            result.last = max(result.last ?? info.day, info.day)
+        }
+        return result
+    }
+
+    /// Löscht ein Nebenprojekt. Seine Zeit zählt danach wieder zum Hauptprojekt.
+    func deleteProject(_ project: Project) {
+        let infos = (try? context.fetch(FetchDescriptor<DayInfo>())) ?? []
+        for info in infos where info.allocations[project.key] != nil {
+            info.allocations[project.key] = nil
+        }
+        context.delete(project)
+        save()
+    }
+
     func moveProjects(from source: IndexSet, to destination: Int) {
         var projects = projects
         projects.move(fromOffsets: source, toOffset: destination)

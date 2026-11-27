@@ -664,6 +664,7 @@ enum Formats {
     static let month = formatter("LLLL yyyy")
     static let weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
     static let dayMonth = formatter("d.M.")
+    static let dayMonthYear = formatter("d.M.yyyy")
     static let day = formatter("d.")
     static let dayMonthName = formatter("d. MMMM")
     static let dayShortMonth = formatter("d. MMM")

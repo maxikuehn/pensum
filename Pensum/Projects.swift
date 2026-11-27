@@ -213,6 +213,7 @@ struct ProjectManager: View {
     @Bindable var model: OverviewModel
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focused: UUID?
+    @State private var deleting: Project?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -236,7 +237,7 @@ struct ProjectManager: View {
                 .moveDisabled(true)
 
                 ForEach(model.projects) { project in
-                    ProjectRow(project: project, focused: $focused) { model.save() }
+                    ProjectRow(project: project, focused: $focused, changed: { model.save() }, delete: { deleting = project })
                 }
                 .onMove { model.moveProjects(from: $0, to: $1) }
             }
@@ -258,6 +259,29 @@ struct ProjectManager: View {
         }
         .padding(18)
         .frame(width: 400)
+        .alert(
+            "„\(deleting?.name ?? "")“ löschen?",
+            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+            presenting: deleting
+        ) { project in
+            Button("Löschen", role: .destructive) {
+                model.deleteProject(project)
+                deleting = nil
+            }
+            Button("Abbrechen", role: .cancel) { deleting = nil }
+        } message: { project in
+            Text(deleteMessage(for: project))
+        }
+    }
+
+    private func deleteMessage(for project: Project) -> String {
+        let usage = model.usage(of: project)
+        guard usage.days > 0, let last = usage.last else {
+            return "Das Projekt wurde bisher an keinem Tag genutzt."
+        }
+        let days = usage.days == 1 ? "einem Tag" : "\(usage.days) Tagen"
+        return "Genutzt an \(days) mit zusammen \(HoursFormat.decimal(usage.minutes)) h, zuletzt am \(Formats.dayMonthYear.string(from: last)). "
+            + "Diese Zeit zählt danach zu „\(model.mainProjectName)“. Das lässt sich nicht rückgängig machen."
     }
 }
 
@@ -265,6 +289,7 @@ private struct ProjectRow: View {
     @Bindable var project: Project
     var focused: FocusState<UUID?>.Binding
     let changed: () -> Void
+    let delete: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -295,6 +320,14 @@ private struct ProjectRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(project.isHidden ? "Einblenden" : "Ausblenden")
+            Button(action: delete) {
+                Image(systemName: "trash")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(project.name) löschen")
         }
         .opacity(project.isHidden ? 0.5 : 1)
     }
